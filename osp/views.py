@@ -120,3 +120,8 @@ def panel(request):
         # For simplicity, show units created_by the president (or all units)
         context['units'] = Unit.objects.all()
     return render(request, 'osp/panel.html', context)
+
+
+def landing(request):
+    # Public landing page
+    return render(request, 'osp/landing.html')

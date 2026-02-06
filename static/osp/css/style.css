@@ -1,38 +1,72 @@
-/* Basic styles for Remiznet */
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f7f9fc;
-  color: #222;
-  margin: 0;
-  padding: 0 1rem;
+/* Remiznet - landing styles */
+:root{
+  --bg:#f6f7fb;
+  --header:#1f3a57;
+  --accent:#2b8bd6;
+  --accent-dark:#246aa8;
+  --muted:#6b7280;
+  --card:#ffffff;
 }
-.site-header {
-  background: #2c3e50;
-  color: #fff;
-  padding: 1rem 1rem;
+*{box-sizing:border-box}
+body{
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  background:var(--bg);
+  color:#0f1724;
+  margin:0;
+  -webkit-font-smoothing:antialiased;
 }
-.site-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
+.container{max-width:1100px;margin:0 auto;padding:0 1rem}
+.site-header{background:var(--header);color:#fff;padding:1rem 0}
+.site-header .container{display:flex;align-items:center;justify-content:space-between}
+.site-header h1{font-size:1.25rem;margin:0}
+.site-header nav a{color:#dfefff;text-decoration:none;margin-left:1rem;font-size:0.95rem}
+.site-main{padding:2rem 0}
+
+/* Hero */
+.hero{padding:4rem 0;background:linear-gradient(180deg, rgba(43,139,214,0.06), transparent)}
+.hero-inner{display:flex;gap:2rem;align-items:center}
+.hero-text{flex:1}
+.hero-text h2{font-size:2rem;margin:0 0 0.5rem}
+.hero-text .lead{color:var(--muted);font-size:1.05rem;margin-bottom:1rem}
+.hero-actions{display:flex;gap:0.75rem}
+.btn{display:inline-block;padding:0.6rem 1rem;border-radius:8px;text-decoration:none;font-weight:600}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-dark)}
+.btn-secondary{background:#fff;color:var(--accent);border:1px solid rgba(43,139,214,0.15)}
+.btn-secondary:hover{background:#f0f7ff}
+
+.hero-illustration{width:320px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.illu-card{width:260px;height:160px;background:linear-gradient(135deg,#fff,#eef6ff);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--header);box-shadow:0 6px 18px rgba(15,23,36,0.08)}
+
+/* Features */
+.features{padding:2.2rem 0}
+.features h3{text-align:center;margin-bottom:1rem}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.feature{background:var(--card);padding:1rem;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,36,0.04)}
+.feature h4{margin:0 0 0.5rem}
+.feature p{margin:0;color:var(--muted)}
+
+/* About / steps */
+.about{padding:2rem 0}
+.steps{max-width:720px;margin:0 auto}
+.steps li{margin-bottom:0.6rem}
+
+/* Footer */
+.site-footer{padding:2rem 0;border-top:1px solid rgba(15,23,36,0.04);background:transparent}
+.site-footer .muted{color:var(--muted);text-align:center}
+
+/* Responsive */
+@media (max-width:900px){
+  .hero-inner{flex-direction:column-reverse;text-align:center}
+  .hero-illustration{width:100%}
+  .features-grid{grid-template-columns:1fr}
 }
-.site-header nav a {
-  color: #ecf0f1;
-  text-decoration: none;
-  margin-right: 0.5rem;
-}
-.site-main {
-  padding: 1rem 0;
-}
-button {
-  background: #3498db;
-  color: #fff;
-  border: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-button:hover { background: #2980b9 }
-form { max-width: 600px }
-input, textarea, select { width: 100%; padding: 0.4rem; margin-bottom: 0.5rem }
-ul { padding-left: 1.2rem }
-li { margin-bottom: 0.4rem }
+
+/* Forms and general elements */
+form{max-width:720px;margin:0}
+input,textarea,select{width:100%;padding:0.6rem;border-radius:6px;border:1px solid #e6e9ef}
+button, .btn{cursor:pointer}
+
+/* small utilities */
+.muted{color:var(--muted)}
+.align-center{text-align:center}

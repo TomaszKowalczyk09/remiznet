@@ -1,0 +1,59 @@
+{% extends 'osp/base.html' %}
+{% block title %}Remiznet - Strona główna{% endblock %}
+{% block content %}
+  <div class="landing-container">
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-text">
+          <h2>Remiznet — nowoczesny system dla jednostek OSP</h2>
+          <p class="lead">Zarządzaj strażakami, twórz i śledź wnioski, otrzymuj decyzje administracyjne — wszystko w jednym prostym narzędziu.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="/osp/panel/">Przejdź do panelu</a>
+            <a class="btn btn-secondary" href="/login/">Zaloguj się</a>
+          </div>
+        </div>
+        <div class="hero-illustration" aria-hidden="true">
+          <!-- prosty dekor zamiast obrazu -->
+          <div class="illu-card">Remiznet</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="container">
+        <h3>Dlaczego Remiznet?</h3>
+        <div class="features-grid">
+          <div class="feature">
+            <h4>Intuicyjny panel</h4>
+            <p>Prosty interfejs dla prezesów i urzędników — wykonuj codzienne zadania szybciej.</p>
+          </div>
+          <div class="feature">
+            <h4>Historia decyzji</h4>
+            <p>Przechowuj w jednym miejscu wszystkie odpowiedzi i historię zmian statusu wniosków.</p>
+          </div>
+          <div class="feature">
+            <h4>Bezpieczeństwo</h4>
+            <p>Ramy Django i sprawdzone praktyki zapewniają bezpieczeństwo danych.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="about">
+      <div class="container">
+        <h3>Jak to działa?</h3>
+        <ol class="steps">
+          <li><strong>Prezesi</strong> dodają strażaków i składają wnioski.</li>
+          <li><strong>Urzędnicy</strong> przeglądają, akceptują lub odrzucają wnioski z komentarzem.</li>
+          <li>Wszystkie akcje są zapisywane w historii wniosku.</li>
+        </ol>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© {{ now|date:"Y" }} Remiznet — system zarządzania wnioskami OSP</p>
+      </div>
+    </footer>
+  </div>
+{% endblock %}

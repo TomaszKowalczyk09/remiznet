@@ -16,11 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
+from osp import views as osp_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='/osp/', permanent=False), name='home'),
+    path('', osp_views.landing, name='home'),
     path('', include('django.contrib.auth.urls')),
     path('osp/', include('osp.urls')),
 ]
