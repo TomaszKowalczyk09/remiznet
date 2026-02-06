@@ -1,0 +1,18 @@
+{% extends 'osp/base.html' %}
+{% block title %}Request Detail{% endblock %}
+{% block content %}
+  <h2>{{ request_obj.title }}</h2>
+  <p>{{ request_obj.description }}</p>
+  <p>Status: {{ request_obj.status }}</p>
+  <h3>Responses</h3>
+  <ul>
+    {% for resp in request_obj.responses.all %}
+      <li>{{ resp.created_at }} - {{ resp.action }} - {{ resp.responder }}: {{ resp.message }}</li>
+    {% empty %}
+      <li>No responses yet</li>
+    {% endfor %}
+  </ul>
+  {% if user.groups.filter(name='official').exists and request_obj.status == 'SUBMITTED' %}
+    <p><a href="{% url 'osp:request_respond' request_obj.pk %}">Respond</a></p>
+  {% endif %}
+{% endblock %}

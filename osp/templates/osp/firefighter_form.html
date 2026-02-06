@@ -1,0 +1,10 @@
+{% extends 'osp/base.html' %}
+{% block title %}Add Firefighter{% endblock %}
+{% block content %}
+  <h2>Add Firefighter for {{ unit.name }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+  </form>
+{% endblock %}

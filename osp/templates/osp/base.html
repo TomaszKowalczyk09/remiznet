@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>OSP - {% block title %}{% endblock %}</title>
+</head>
+<body>
+  <header>
+    <h1>OSP Management</h1>
+    {% if user.is_authenticated %}
+      <p>Logged in as {{ user.username }} | <a href="/admin/logout/">Logout</a></p>
+    {% else %}
+      <p><a href="/admin/login/">Login</a></p>
+    {% endif %}
+    <hr/>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

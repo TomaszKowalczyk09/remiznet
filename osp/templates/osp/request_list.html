@@ -1,0 +1,12 @@
+{% extends 'osp/base.html' %}
+{% block title %}Requests{% endblock %}
+{% block content %}
+  <h2>Requests</h2>
+  <ul>
+    {% for r in requests %}
+      <li><a href="{% url 'osp:request_detail' r.pk %}">{{ r.title }}</a> - {{ r.unit }} - {{ r.status }}</li>
+    {% empty %}
+      <li>No requests</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
