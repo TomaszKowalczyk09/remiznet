@@ -1,25 +1,27 @@
+{% load static %}
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>OSP - {% block title %}{% endblock %}</title>
+  <title>Remiznet - {% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'osp/css/style.css' %}">
 </head>
 <body>
-  <header>
-    <h1>OSP Management</h1>
+  <header class="site-header">
+    <h1>Remiznet</h1>
     <nav>
-      <a href="/osp/">Home</a> |
+      <a href="/osp/">Strona główna</a> |
       <a href="/osp/panel/">Panel</a> |
       {% if user.is_authenticated %}
-        <span>Logged in as {{ user.username }}</span> |
-        <a href="{% url 'osp:logout' %}">Logout</a>
+        <span>Zalogowany jako {{ user.username }}</span> |
+        <a href="{% url 'osp:logout' %}">Wyloguj</a>
       {% else %}
-        <a href="{% url 'osp:login' %}">Login</a>
+        <a href="{% url 'osp:login' %}">Zaloguj</a>
       {% endif %}
     </nav>
     <hr/>
   </header>
-  <main>
+  <main class="site-main">
     {% block content %}{% endblock %}
   </main>
 </body>
