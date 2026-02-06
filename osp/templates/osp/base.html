@@ -7,20 +7,6 @@
   <link rel="stylesheet" href="{% static 'osp/css/style.css' %}">
 </head>
 <body>
-  <header class="site-header">
-    <h1>Remiznet</h1>
-    <nav>
-      <a href="/">Strona główna</a> |
-      <a href="/osp/panel/">Panel</a> |
-      {% if user.is_authenticated %}
-        <span>Zalogowany jako {{ user.username }}</span> |
-        <a href="{% url 'osp:logout' %}">Wyloguj</a>
-      {% else %}
-        <a href="{% url 'osp:login' %}">Zaloguj</a>
-      {% endif %}
-    </nav>
-    <hr/>
-  </header>
   <main class="site-main">
     {% block content %}{% endblock %}
   </main>

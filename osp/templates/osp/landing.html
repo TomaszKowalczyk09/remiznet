@@ -1,59 +1,118 @@
 {% extends 'osp/base.html' %}
-{% block title %}Remiznet - Strona główna{% endblock %}
+
+{% block title %}Remiznet — system dla jednostek OSP{% endblock %}
+
 {% block content %}
-  <div class="landing-container">
-    <section class="hero">
-      <div class="hero-inner">
-        <div class="hero-text">
-          <h2>Remiznet — nowoczesny system dla jednostek OSP</h2>
-          <p class="lead">Zarządzaj strażakami, twórz i śledź wnioski, otrzymuj decyzje administracyjne — wszystko w jednym prostym narzędziu.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="/osp/panel/">Przejdź do panelu</a>
-            <a class="btn btn-secondary" href="/login/">Zaloguj się</a>
-          </div>
-        </div>
-        <div class="hero-illustration" aria-hidden="true">
-          <!-- prosty dekor zamiast obrazu -->
-          <div class="illu-card">Remiznet</div>
-        </div>
-      </div>
-    </section>
+<header class="lp-header">
+  <div class="lp-header-inner">
+    <div class="lp-logo">Remiznet</div>
+    <nav class="lp-nav-links">
+      <a href="#dlaczego">Dlaczego Remiznet</a>
+      <a href="#funkcje">Funkcje</a>
+      <a href="#jak-to-dziala">Jak to działa</a>
+      <a href="/osp/panel/" class="btn btn-outline">Przejdź do panelu</a>
+      <a href="/login/" class="btn btn-primary">Zaloguj się</a>
+    </nav>
+  </div>
+</header>
 
-    <section class="features">
-      <div class="container">
-        <h3>Dlaczego Remiznet?</h3>
-        <div class="features-grid">
-          <div class="feature">
-            <h4>Intuicyjny panel</h4>
-            <p>Prosty interfejs dla prezesów i urzędników — wykonuj codzienne zadania szybciej.</p>
-          </div>
-          <div class="feature">
-            <h4>Historia decyzji</h4>
-            <p>Przechowuj w jednym miejscu wszystkie odpowiedzi i historię zmian statusu wniosków.</p>
-          </div>
-          <div class="feature">
-            <h4>Bezpieczeństwo</h4>
-            <p>Ramy Django i sprawdzone praktyki zapewniają bezpieczeństwo danych.</p>
-          </div>
-        </div>
+<main class="lp-main">
+  <section class="lp-hero">
+    <div>
+      <p class="lp-hero-kicker">System dla jednostek OSP</p>
+      <h1>Nowoczesne zarządzanie wnioskami <span>bez Excela i papierów</span></h1>
+      <p class="lp-hero-subtitle">
+        Dodawaj strażaków, składaj i opiniuj wnioski, pilnuj historii decyzji
+        w jednym, bezpiecznym panelu przystosowanym do pracy w gminie.
+      </p>
+      <div class="lp-hero-actions">
+        <a href="/osp/panel/" class="btn btn-primary">Przejdź do panelu demo</a>
+        <a href="#jak-to-dziala" class="btn btn-outline lp-hero-outline">Zobacz jak to działa</a>
       </div>
-    </section>
+      <p class="lp-hero-meta">
+        Działa w przeglądarce, bez instalacji. Logowanie przez indywidualne konta prezesa i urzędników.
+      </p>
+    </div>
 
-    <section class="about">
-      <div class="container">
-        <h3>Jak to działa?</h3>
-        <ol class="steps">
-          <li><strong>Prezesi</strong> dodają strażaków i składają wnioski.</li>
-          <li><strong>Urzędnicy</strong> przeglądają, akceptują lub odrzucają wnioski z komentarzem.</li>
-          <li>Wszystkie akcje są zapisywane w historii wniosku.</li>
+    <aside class="lp-hero-card">
+      <div class="lp-hero-card-title">Podgląd jednostki OSP</div>
+      <div class="lp-hero-grid">
+        <span><span class="lp-hero-dot dot-green"></span>Status wniosku: zaakceptowany</span>
+        <span><span class="lp-hero-dot dot-blue"></span>3 aktywne wnioski</span>
+        <span><span class="lp-hero-dot dot-amber"></span>2 wnioski oczekują na decyzję</span>
+        <span><span class="lp-hero-dot dot-gray"></span>Pełna historia zmian</span>
+      </div>
+    </aside>
+  </section>
+
+  <section id="dlaczego" class="lp-section">
+    <div class="lp-section-header">
+      <div>
+        <p class="lp-section-kicker">Dlaczego Remiznet</p>
+        <h2 class="lp-section-title">Codzienna praca OSP w jednym miejscu</h2>
+      </div>
+      <p class="lp-section-description">
+        Panel jest zaprojektowany dla prezesów i urzędników gminnych, tak aby
+        zgłaszanie i opiniowanie wniosków zajmowało minuty, a nie godziny.
+      </p>
+    </div>
+
+    <div id="funkcje" class="lp-feature-grid">
+      <article class="lp-feature">
+        <p class="lp-feature-label">Panel</p>
+        <h3>Intuicyjny interfejs</h3>
+        <p>
+          Prezes widzi tylko swoje jednostki i strażaków, urzędnik — wszystkie
+          napływające wnioski wraz z ich statusem i historią decyzji.
+        </p>
+      </article>
+
+      <article class="lp-feature">
+        <p class="lp-feature-label">Historia decyzji</p>
+        <h3>Pełna przejrzystość</h3>
+        <p>
+          Każda zmiana statusu zapisywana jest w dzienniku zdarzeń, dzięki czemu
+          w dowolnej chwili można odtworzyć kto i kiedy podjął decyzję.
+        </p>
+      </article>
+
+      <article class="lp-feature">
+        <p class="lp-feature-label">Bezpieczeństwo</p>
+        <h3>Dane w Django</h3>
+        <p>
+          Uprawnienia oparte na rolach, logowanie po SSL oraz kopie zapasowe
+          chronią dane strażaków i dokumentów przed nieautoryzowanym dostępem.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section id="jak-to-dziala" class="lp-section">
+    <div class="lp-how-it-works">
+      <div class="lp-how-it-steps">
+        <p class="lp-section-kicker">Jak to działa</p>
+        <h2 class="lp-section-title" style="margin-bottom:.6rem;">3 kroki obsługi wniosku</h2>
+        <ol>
+          <li>Prezes dodaje strażaków i składa wniosek z poziomu swojej jednostki.</li>
+          <li>Urzędnik gminy otrzymuje powiadomienie, przegląda dane i wprowadza decyzję.</li>
+          <li>System zapisuje całą historię — komentarze, daty i osoby podejmujące decyzje.</li>
         </ol>
       </div>
-    </section>
-
-    <footer class="site-footer">
-      <div class="container">
-        <p class="muted">© {{ now|date:"Y" }} Remiznet — system zarządzania wnioskami OSP</p>
+      <div>
+        <p class="lp-badge">Dla gmin i jednostek OSP</p>
+        <p class="lp-how-lead">
+          Remiznet porządkuje proces decyzyjny, ułatwia rozliczenia i minimalizuje
+          liczbę pomyłek przy wypełnianiu dokumentów papierowych.
+        </p>
+        <p class="lp-how-note">
+          Gotowy do wdrożenia w wielu jednostkach gminy jednocześnie, z centralnym zarządzaniem użytkownikami.
+        </p>
       </div>
-    </footer>
-  </div>
+    </div>
+  </section>
+
+  <footer class="lp-footer">
+    © Remiznet — system zarządzania wnioskami OSP
+  </footer>
+</main>
 {% endblock %}
