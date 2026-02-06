@@ -1,10 +1,10 @@
 {% extends 'osp/base.html' %}
-{% block title %}Respond{% endblock %}
+{% block title %}Odpowiedz{% endblock %}
 {% block content %}
-  <h2>Respond to: {{ request_obj.title }}</h2>
+  <h2>Odpowiedz na: {{ request_obj.title }}</h2>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Send Response</button>
+    <button type="submit">Wyślij odpowiedź</button>
   </form>
 {% endblock %}

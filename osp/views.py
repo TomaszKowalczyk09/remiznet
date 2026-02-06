@@ -109,3 +109,14 @@ def request_respond(request, pk):
     else:
         form = ResponseForm()
     return render(request, 'osp/request_respond.html', {'form': form, 'request_obj': req})
+
+
+@login_required
+def panel(request):
+    # Basic panel showing different options depending on role
+    user = request.user
+    context = {'is_president': is_president(user), 'is_official': is_official(user)}
+    if is_president(user):
+        # For simplicity, show units created_by the president (or all units)
+        context['units'] = Unit.objects.all()
+    return render(request, 'osp/panel.html', context)

@@ -1,0 +1,21 @@
+{% extends 'osp/base.html' %}
+{% block title %}Panel{% endblock %}
+{% block content %}
+  <h2>Panel</h2>
+  {% if is_president %}
+    <h3>President actions</h3>
+    <p><a href="/osp/">View Units</a></p>
+    <ul>
+      {% for unit in units %}
+        <li>{{ unit.name }} - <a href="{% url 'osp:request_create' unit.pk %}">New request</a> | <a href="{% url 'osp:firefighter_add' unit.pk %}">Add firefighter</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  {% if is_official %}
+    <h3>Official actions</h3>
+    <p><a href="{% url 'osp:request_list' %}">View submitted requests</a></p>
+  {% endif %}
+  {% if not is_president and not is_official %}
+    <p>You have no role assigned. Contact admin to be added to a group.</p>
+  {% endif %}
+{% endblock %}

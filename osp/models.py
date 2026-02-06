@@ -34,10 +34,10 @@ class Request(models.Model):
     STATUS_REJECTED = 'REJECTED'
 
     STATUS_CHOICES = [
-        (STATUS_DRAFT, 'Draft'),
-        (STATUS_SUBMITTED, 'Submitted'),
-        (STATUS_ACCEPTED, 'Accepted'),
-        (STATUS_REJECTED, 'Rejected'),
+        (STATUS_DRAFT, 'Roboczy'),
+        (STATUS_SUBMITTED, 'Złożony'),
+        (STATUS_ACCEPTED, 'Zaakceptowany'),
+        (STATUS_REJECTED, 'Odrzucony'),
     ]
 
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='requests')
@@ -58,9 +58,9 @@ class RequestResponse(models.Model):
     ACTION_COMMENT = 'COMMENT'
 
     ACTION_CHOICES = [
-        (ACTION_ACCEPT, 'Accept'),
-        (ACTION_REJECT, 'Reject'),
-        (ACTION_COMMENT, 'Comment'),
+        (ACTION_ACCEPT, 'Zaakceptuj'),
+        (ACTION_REJECT, 'Odrzuć'),
+        (ACTION_COMMENT, 'Komentarz'),
     ]
 
     request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='responses')

@@ -1,11 +1,11 @@
 {% extends 'osp/base.html' %}
-{% block title %}Create Request{% endblock %}
+{% block title %}Nowy wniosek{% endblock %}
 {% block content %}
-  <h2>New Request for {{ unit.name }}</h2>
+  <h2>Nowy wniosek dla {{ unit.name }}</h2>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" name="submit" value="0">Save Draft</button>
-    <button type="submit" name="submit" value="1">Submit</button>
+    <button type="submit" name="submit" value="0">Zapisz roboczy</button>
+    <button type="submit" name="submit" value="1">Wyślij</button>
   </form>
 {% endblock %}

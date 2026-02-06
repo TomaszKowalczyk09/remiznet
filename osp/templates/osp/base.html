@@ -7,11 +7,16 @@
 <body>
   <header>
     <h1>OSP Management</h1>
-    {% if user.is_authenticated %}
-      <p>Logged in as {{ user.username }} | <a href="/admin/logout/">Logout</a></p>
-    {% else %}
-      <p><a href="/admin/login/">Login</a></p>
-    {% endif %}
+    <nav>
+      <a href="/osp/">Home</a> |
+      <a href="/osp/panel/">Panel</a> |
+      {% if user.is_authenticated %}
+        <span>Logged in as {{ user.username }}</span> |
+        <a href="{% url 'osp:logout' %}">Logout</a>
+      {% else %}
+        <a href="{% url 'osp:login' %}">Login</a>
+      {% endif %}
+    </nav>
     <hr/>
   </header>
   <main>

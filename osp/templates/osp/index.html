@@ -1,12 +1,12 @@
 {% extends 'osp/base.html' %}
-{% block title %}Units{% endblock %}
+{% block title %}Jednostki{% endblock %}
 {% block content %}
-<h2>Units</h2>
+<h2>Jednostki</h2>
 <ul>
   {% for unit in units %}
-    <li>{{ unit.name }} - <a href="/osp/units/{{ unit.pk }}/requests/new/">New Request</a> | <a href="/osp/units/{{ unit.pk }}/firefighters/add/">Add Firefighter</a></li>
+    <li>{{ unit.name }} - <a href="/osp/units/{{ unit.pk }}/requests/new/">Nowy wniosek</a> | <a href="/osp/units/{{ unit.pk }}/firefighters/add/">Dodaj strażaka</a></li>
   {% empty %}
-    <li>No units available</li>
+    <li>Brak jednostek</li>
   {% endfor %}
 </ul>
 {% endblock %}
