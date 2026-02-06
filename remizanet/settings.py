@@ -31,6 +31,12 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
+    'unfold.contrib.filters',
+    'unfold.contrib.forms',
+    'unfold.contrib.import_export',
+    'unfold.contrib.simple_history',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -123,3 +129,10 @@ STATICFILES_DIRS = [
 
 LOGIN_REDIRECT_URL = '/osp/panel/'
 LOGOUT_REDIRECT_URL = '/'
+
+# django-unfold minimal configuration
+UNFOLD = {
+    "SITE_TITLE": "Remiznet",
+    "SITE_HEADER": "Remiznet",
+    "SITE_URL": "/",
+}
