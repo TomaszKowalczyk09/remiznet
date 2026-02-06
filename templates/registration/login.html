@@ -1,10 +1,42 @@
 {% extends 'osp/base.html' %}
-{% block title %}Login{% endblock %}
+
+{% block title %}Zaloguj się{% endblock %}
+
 {% block content %}
-  <h2>Login</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
-  </form>
+  <section class="auth">
+    <div class="auth-card">
+      <header class="auth-header">
+        <h2 class="auth-title">Zaloguj się</h2>
+        <p class="auth-subtitle">Dostęp dla prezesów OSP oraz urzędników gminy.</p>
+      </header>
+
+      {% if form.errors %}
+        <div class="auth-alert" role="alert">
+          Nieprawidłowy login lub hasło. Spróbuj ponownie.
+        </div>
+      {% endif %}
+
+      <form method="post" class="auth-form" novalidate>
+        {% csrf_token %}
+
+        <div class="auth-field">
+          <label for="{{ form.username.id_for_label }}">Login</label>
+          {{ form.username }}
+          {% if form.username.errors %}<div class="auth-error">{{ form.username.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <div class="auth-field">
+          <label for="{{ form.password.id_for_label }}">Hasło</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="auth-error">{{ form.password.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary auth-submit">Zaloguj się</button>
+      </form>
+
+      <p class="auth-footnote muted">
+        W razie problemów z dostępem skontaktuj się z administratorem systemu.
+      </p>
+    </div>
+  </section>
 {% endblock %}
