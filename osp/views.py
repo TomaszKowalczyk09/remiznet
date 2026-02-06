@@ -116,9 +116,16 @@ def panel(request):
     # Basic panel showing different options depending on role
     user = request.user
     context = {'is_president': is_president(user), 'is_official': is_official(user)}
-    if is_president(user):
+
+    if context['is_official']:
+        submitted_qs = Request.objects.filter(status=Request.STATUS_SUBMITTED).order_by('-updated_at')
+        context['submitted_count'] = submitted_qs.count()
+        context['recent_submitted'] = submitted_qs[:8]
+
+    if context['is_president']:
         # For simplicity, show units created_by the president (or all units)
         context['units'] = Unit.objects.all()
+
     return render(request, 'osp/panel.html', context)
 
 

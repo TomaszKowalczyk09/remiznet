@@ -1,8 +1,123 @@
 {% extends 'osp/base.html' %}
 {% block title %}Panel{% endblock %}
+
 {% block content %}
-  <h2>Panel</h2>
-  {% if is_president %}
+  {% if is_official %}
+    <div class="wp-admin">
+      <header class="wp-topbar">
+        <div class="wp-topbar-left">
+          <div class="wp-brand">Remiznet</div>
+          <span class="wp-sep">/</span>
+          <span class="wp-area">Panel urzędnika</span>
+        </div>
+        <div class="wp-topbar-right">
+          <span class="wp-user">{{ request.user.username }}</span>
+          <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+        </div>
+      </header>
+
+      <div class="wp-layout">
+        <aside class="wp-sidebar" aria-label="Nawigacja">
+          <a class="wp-menu-item is-active" href="{% url 'osp:panel' %}">Kokpit</a>
+          <a class="wp-menu-item" href="{% url 'osp:request_list' %}">
+            Wnioski do decyzji
+            {% if submitted_count %}<span class="wp-badge">{{ submitted_count }}</span>{% endif %}
+          </a>
+          <a class="wp-menu-item" href="/admin/">Panel administracyjny</a>
+          <div class="wp-menu-sep"></div>
+          <a class="wp-menu-item" href="/">Strona główna</a>
+        </aside>
+
+        <section class="wp-content">
+          <div class="wp-page-head">
+            <div>
+              <h2 class="wp-title">Kokpit</h2>
+              <p class="wp-subtitle">Najważniejsze rzeczy na teraz.</p>
+            </div>
+            <div class="wp-actions">
+              <a class="btn btn-primary" href="{% url 'osp:request_list' %}">Przejdź do wniosków</a>
+            </div>
+          </div>
+
+          <div class="wp-kpis">
+            <article class="wp-kpi wp-kpi--warning">
+              <div class="wp-kpi-label">Do rozpatrzenia</div>
+              <div class="wp-kpi-value">{{ submitted_count|default:0 }}</div>
+              <div class="wp-kpi-hint">Wnioski złożone przez OSP</div>
+            </article>
+
+            <article class="wp-kpi">
+              <div class="wp-kpi-label">Skrót</div>
+              <div class="wp-kpi-value">Wnioski</div>
+              <div class="wp-kpi-hint">Lista i szczegóły + odpowiedź</div>
+            </article>
+
+            <article class="wp-kpi">
+              <div class="wp-kpi-label">Panel</div>
+              <div class="wp-kpi-value">Admin</div>
+              <div class="wp-kpi-hint">Zarządzanie słownikami/użytkownikami</div>
+            </article>
+          </div>
+
+          <div class="wp-grid">
+            <section class="wp-card">
+              <header class="wp-card-head">
+                <h3>Ostatnio złożone wnioski</h3>
+                <a class="wp-link" href="{% url 'osp:request_list' %}">Zobacz wszystkie</a>
+              </header>
+
+              {% if recent_submitted %}
+                <div class="wp-table-wrap" role="region" aria-label="Ostatnio złożone wnioski">
+                  <table class="wp-table">
+                    <thead>
+                      <tr>
+                        <th>Tytuł</th>
+                        <th>Jednostka</th>
+                        <th>Aktualizacja</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for r in recent_submitted %}
+                        <tr>
+                          <td class="wp-td-strong">
+                            <a class="wp-link" href="{% url 'osp:request_detail' r.pk %}">{{ r.title }}</a>
+                          </td>
+                          <td>{{ r.unit }}</td>
+                          <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
+                          <td class="wp-td-right">
+                            <a class="wp-btn" href="{% url 'osp:request_detail' r.pk %}">Otwórz</a>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="wp-empty">Brak nowych wniosków do rozpatrzenia.</p>
+              {% endif %}
+            </section>
+
+            <section class="wp-card">
+              <header class="wp-card-head">
+                <h3>Szybkie kroki</h3>
+              </header>
+              <ol class="wp-steps">
+                <li>Wejdź w <strong>Wnioski do decyzji</strong>.</li>
+                <li>Otwórz wniosek i sprawdź szczegóły.</li>
+                <li>Kliknij <strong>Odpowiedz</strong> i wprowadź decyzję.</li>
+              </ol>
+              <div class="wp-callout">
+                <div class="wp-callout-title">Wskazówka</div>
+                <div class="wp-callout-text">Najpilniejsze są wnioski bez odpowiedzi (status: „Złożony”).</div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
+  {% elif is_president %}
+    <h2>Panel</h2>
     <h3>President actions</h3>
     <p><a href="/osp/">View Units</a></p>
     <ul>
@@ -10,12 +125,12 @@
         <li>{{ unit.name }} - <a href="{% url 'osp:request_create' unit.pk %}">New request</a> | <a href="{% url 'osp:firefighter_add' unit.pk %}">Add firefighter</a></li>
       {% endfor %}
     </ul>
-  {% endif %}
-  {% if is_official %}
-    <h3>Official actions</h3>
-    <p><a href="{% url 'osp:request_list' %}">View submitted requests</a></p>
-  {% endif %}
-  {% if not is_president and not is_official %}
-    <p>You have no role assigned. Contact admin to be added to a group.</p>
+  {% else %}
+    <section class="auth">
+      <div class="auth-card">
+        <h2 class="auth-title">Brak przypisanej roli</h2>
+        <p class="auth-subtitle">Skontaktuj się z administratorem, aby dodać Twoje konto do odpowiedniej grupy.</p>
+      </div>
+    </section>
   {% endif %}
 {% endblock %}
