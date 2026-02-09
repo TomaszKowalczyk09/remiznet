@@ -12,11 +12,17 @@ def index(request):
 
 
 def is_president(user):
-    return user.is_authenticated and user.groups.filter(name='president').exists()
+    return (
+        user.is_authenticated
+        and user.groups.filter(name__in=['Prezes OSP', 'president']).exists()
+    )
 
 
 def is_official(user):
-    return user.is_authenticated and user.groups.filter(name='official').exists()
+    return (
+        user.is_authenticated
+        and user.groups.filter(name__in=['Urzędnik gminy', 'official']).exists()
+    )
 
 
 @login_required
