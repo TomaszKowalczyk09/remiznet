@@ -1,3 +1,23 @@
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from .forms import SignRequestForm
+@login_required
+def request_sign(request, pk):
+    req = get_object_or_404(Request, pk=pk)
+    if not is_president(request.user):
+        return HttpResponseForbidden('Tylko prezes może podpisać wniosek')
+    if req.signed_by:
+        return redirect('osp:request_detail', pk=pk)
+    if request.method == 'POST':
+        form = SignRequestForm(request.POST)
+        if form.is_valid():
+            req.signed_by = request.user
+            req.signed_at = timezone.now()
+            req.save()
+            return redirect('osp:request_detail', pk=pk)
+    else:
+        form = SignRequestForm()
+    return render(request, 'osp/request_sign.html', {'form': form, 'request_obj': req})
 from django.contrib.auth import logout as django_logout
 
 from django.shortcuts import render, redirect

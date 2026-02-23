@@ -4,6 +4,11 @@
   <h2>{{ request_obj.title }}</h2>
   <p>{{ request_obj.description }}</p>
   <p>Status: {{ request_obj.get_status_display }}</p>
+  {% if request_obj.signed_by %}
+    <p style="color:green;">Podpisany przez: {{ request_obj.signed_by }}<br>Data: {{ request_obj.signed_at|date:"Y-m-d H:i" }}</p>
+  {% elif user.is_authenticated and user.groups.filter(name__in=['Prezes OSP', 'president']).exists %}
+    <p><a class="btn btn-primary" href="{% url 'osp:request_sign' request_obj.pk %}">Podpisz wniosek</a></p>
+  {% endif %}
   <h3>Odpowiedzi</h3>
   <ul>
     {% for resp in request_obj.responses.all %}

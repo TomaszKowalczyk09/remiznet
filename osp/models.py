@@ -47,6 +47,8 @@ class Request(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    signed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='signed_requests')
+    signed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.title} - {self.unit} [{self.status}]"

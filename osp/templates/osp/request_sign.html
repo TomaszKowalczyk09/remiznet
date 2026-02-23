@@ -1,0 +1,10 @@
+{% extends 'osp/base.html' %}
+{% block title %}Podpisz wniosek{% endblock %}
+{% block content %}
+  <h2>Podpisz wniosek: {{ request_obj.title }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Podpisz</button>
+  </form>
+{% endblock %}

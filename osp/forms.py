@@ -1,4 +1,6 @@
 from django import forms
+class SignRequestForm(forms.Form):
+    confirm = forms.BooleanField(label="Potwierdzam podpisanie wniosku", required=True)
 from .models import Firefighter, Request, RequestResponse
 
 
