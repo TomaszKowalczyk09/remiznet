@@ -1,0 +1,14 @@
+{% extends 'osp/base.html' %}
+{% block title %}Wylogowano{% endblock %}
+{% block content %}
+<section class="auth">
+  <div class="auth-card">
+    <h2 class="auth-title">Pomyślnie wylogowano z systemu Remiznet</h2>
+    <p style="font-size:0.9em; margin-top:0.5em; color:#888;">Wejdź na stronę główną,<br>lub zaloguj się ponownie</p>
+    <div style="margin-top:1em;">
+      <a class="btn btn-primary" href="/">Strona główna</a>
+      <a class="btn btn-outline" href="{% url 'osp:login' %}" style="margin-left:0.5em;">Zaloguj się ponownie</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

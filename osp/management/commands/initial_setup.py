@@ -29,4 +29,36 @@ class Command(BaseCommand):
         for g in (president_group, official_group, legacy_pres, legacy_off):
             g.permissions.set(perms)
 
+        # Create default users for Prezes OSP and Urzędnik gminy
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        # Prezes OSP
+        prez_username = 'prezes_osp'
+        prez_email = 'prezes@osp.pl'
+        prez_password = 'prezesosp123'
+        prez_user, created = User.objects.get_or_create(username=prez_username, defaults={
+            'email': prez_email
+        })
+        if created:
+            prez_user.set_password(prez_password)
+            prez_user.save()
+        prez_user.groups.add(president_group)
+
+        # Urzędnik gminy
+        urz_username = 'urzednik_gminy'
+        urz_email = 'urzednik@gmina.pl'
+        urz_password = 'urzednik123'
+        urz_user, created = User.objects.get_or_create(username=urz_username, defaults={
+            'email': urz_email
+        })
+        if created:
+            urz_user.set_password(urz_password)
+            urz_user.save()
+        urz_user.groups.add(official_group)
+
+        self.stdout.write(self.style.SUCCESS('Utworzono domyślne konta:'))
+        self.stdout.write(self.style.SUCCESS(f'Prezes OSP: {prez_username} / {prez_password}'))
+        self.stdout.write(self.style.SUCCESS(f'Urzędnik gminy: {urz_username} / {urz_password}'))
+
         self.stdout.write(self.style.SUCCESS('Ensured groups: Prezes OSP, Urzędnik gminy (and legacy: president, official)'))

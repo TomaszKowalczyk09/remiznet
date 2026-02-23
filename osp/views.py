@@ -1,3 +1,14 @@
+from django.contrib.auth import logout as django_logout
+
+from django.shortcuts import render, redirect
+
+def logout_view(request):
+    if request.method == 'POST':
+        django_logout(request)
+        return render(request, 'registration/logout.html')
+    elif request.method == 'GET':
+        django_logout(request)
+        return render(request, 'registration/logout.html')
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden, HttpResponseBadRequest
