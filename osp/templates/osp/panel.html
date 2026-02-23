@@ -161,6 +161,7 @@
                     <td>
                       <a class="wp-btn" href="{% url 'osp:request_create' unit.pk %}">Nowy wniosek</a>
                       <a class="wp-btn" href="{% url 'osp:firefighter_add' unit.pk %}">Dodaj strażaka</a>
+                      <a class="wp-btn" href="{% url 'osp:firefighter_list_unit' unit.pk %}">Strażacy</a>
                     </td>
                   </tr>
                 {% empty %}

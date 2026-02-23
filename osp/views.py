@@ -1,6 +1,32 @@
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from .forms import SignRequestForm
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponseForbidden, HttpResponseBadRequest
+from .models import Unit, Firefighter, Request, RequestResponse
+from .forms import FirefighterForm, RequestForm, ResponseForm
+from django.contrib.auth.models import Group
+
+def firefighter_list(request, unit_pk=None):
+    user = request.user
+    if is_official(user):
+        # Officials see all firefighters
+        if unit_pk:
+            unit = get_object_or_404(Unit, pk=unit_pk)
+            firefighters = Firefighter.objects.filter(unit=unit)
+        else:
+            firefighters = Firefighter.objects.all()
+    elif is_president(user):
+        # Presidents see only their unit's firefighters
+        units = Unit.objects.filter(firefighters__created_by=user).distinct()
+        if unit_pk:
+            unit = get_object_or_404(units, pk=unit_pk)
+            firefighters = Firefighter.objects.filter(unit=unit)
+        else:
+            firefighters = Firefighter.objects.filter(unit__in=units)
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+    return render(request, 'osp/firefighter_list.html', {'firefighters': firefighters})
 @login_required
 def request_sign(request, pk):
     req = get_object_or_404(Request, pk=pk)

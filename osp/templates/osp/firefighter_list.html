@@ -1,0 +1,31 @@
+{% extends 'osp/base.html' %}
+{% block title %}Strażacy{% endblock %}
+{% block content %}
+<h2>Lista strażaków</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Imię</th>
+      <th>Nazwisko</th>
+      <th>Jednostka</th>
+      <th>Stopień</th>
+      <th>Email</th>
+      <th>Telefon</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ff in firefighters %}
+      <tr>
+        <td>{{ ff.first_name }}</td>
+        <td>{{ ff.last_name }}</td>
+        <td>{{ ff.unit.name }}</td>
+        <td>{{ ff.rank }}</td>
+        <td>{{ ff.email }}</td>
+        <td>{{ ff.phone }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Brak strażaków</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
