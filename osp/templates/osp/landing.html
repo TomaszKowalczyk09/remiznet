@@ -1,117 +1,77 @@
 {% extends 'osp/base.html' %}
-
-{% block title %}Remiznet — system dla jednostek OSP{% endblock %}
-
+{% load static %}
+{% block title %}Remiznet — Nowoczesny system OSP{% endblock %}
 {% block content %}
-<header class="lp-header">
-  <div class="lp-header-inner">
-    <div class="lp-logo">Remiznet</div>
-    <nav class="lp-nav-links">
-      <a href="#dlaczego">Dlaczego Remiznet</a>
-      <a href="#funkcje">Funkcje</a>
-      <a href="#jak-to-dziala">Jak to działa</a>
-      <a href="/login/" class="btn btn-primary">Zaloguj się</a>
-    </nav>
+<section class="hero" style="background: linear-gradient(90deg, rgba(15,35,56,0.92) 60%, rgba(200,205,210,0.15)), url('{% static 'osp/img/hero-bg.jpg' %}') center/cover no-repeat; padding: 0; min-height: 520px; display: flex; align-items: flex-start; border-radius: 0 0 2.5rem 2.5rem;">
+  <div class="container" style="width:100%;padding:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:2.5rem 2rem 2.5rem 3rem;">
+      <div style="max-width:540px;color:#fff;z-index:2;">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+          <div style="width:54px;height:54px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <!-- LOGO PLACEHOLDER -->
+            <img src="{% static 'osp/img/logo.svg' %}" alt="Remiznet logo" style="width:38px;height:38px;object-fit:contain;"/>
+          </div>
+          <span style="font-size:1.35rem;font-weight:700;letter-spacing:.02em;color:#fff;">Remiznet</span>
+        </div>
+        <div style="font-size:1.1rem;color:var(--lp-primary-light,#00A8AA);font-weight:600;margin-bottom:0.5rem;">Zmieniamy zarządzanie OSP</div>
+        <h1 style="font-size:2.5rem;font-weight:800;line-height:1.1;margin-bottom:1.2rem;">Nowoczesny system<br>dla Twojej jednostki</h1>
+        <div style="font-size:1.15rem;line-height:1.5;margin-bottom:2rem;max-width:420px;">
+          Zarządzaj wnioskami, członkami i dokumentacją w jednym, bezpiecznym panelu online. Szybko, wygodnie, bez papierów.
+        </div>
+        <div style="display:flex;gap:1rem;align-items:center;">
+          <a href="/login/" class="btn btn-primary" style="font-size:1.1rem;padding:0.8rem 2.2rem;">Zaloguj się</a>
+          <a href="#features" class="btn btn-outline" style="font-size:1.1rem;padding:0.8rem 2.2rem;">Poznaj funkcje</a>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:320px;">
+        <!-- Optional: place for illustration or video -->
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:2rem;margin-top:-2.5rem;z-index:3;position:relative;">
+      <div style="background:#fff;border-radius:1.2rem;box-shadow:0 4px 24px rgba(15,35,56,0.10);padding:1.5rem 2.5rem;display:flex;gap:2.5rem;align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:2rem;color:var(--lp-accent,#CC2630);font-weight:700;">3</div>
+          <div style="font-size:.98rem;color:var(--lp-primary,#0F2338);">Aktywne wnioski</div>
+        </div>
+        <div style="width:1px;height:40px;background:var(--lp-bg,#C8CDD2);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:2rem;color:var(--lp-primary-light,#00A8AA);font-weight:700;">2</div>
+          <div style="font-size:.98rem;color:var(--lp-primary,#0F2338);">Oczekujące decyzje</div>
+        </div>
+        <div style="width:1px;height:40px;background:var(--lp-bg,#C8CDD2);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:2rem;color:var(--lp-primary,#0F2338);font-weight:700;">100%</div>
+          <div style="font-size:.98rem;color:var(--lp-primary,#0F2338);">Historia zmian</div>
+        </div>
+      </div>
+    </div>
   </div>
-</header>
+</section>
 
-<main class="lp-main">
-  <section class="lp-hero">
-    <div>
-      <p class="lp-hero-kicker">System dla jednostek OSP</p>
-      <h1>Nowoczesne zarządzanie wnioskami <span>bez Excela i papierów</span></h1>
-      <p class="lp-hero-subtitle">
-        Dodawaj strażaków, składaj i opiniuj wnioski, pilnuj historii decyzji
-        w jednym, bezpiecznym panelu przystosowanym do pracy w gminie.
-      </p>
-      <div class="lp-hero-actions">
-        <a href="/login/" class="btn btn-primary">Zaloguj się</a>
-        <a href="#jak-to-dziala" class="btn btn-outline lp-hero-outline">Zobacz jak to działa</a>
+<section class="features" id="features" style="background:#fff;padding:3.5rem 0 2.5rem 0;">
+  <div class="container">
+    <div class="features-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;">
+      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
+        <div style="font-size:2.2rem;color:var(--lp-accent,#CC2630);margin-bottom:0.7rem;">&#128218;</div>
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Zarządzanie wnioskami</div>
+        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Składaj, opiniuj i podpisuj wnioski w jednym miejscu.</div>
       </div>
-      <p class="lp-hero-meta">
-        Działa w przeglądarce, bez instalacji. Logowanie przez indywidualne konta prezesa i urzędników.
-      </p>
-    </div>
-
-    <aside class="lp-hero-card">
-      <div class="lp-hero-card-title">Podgląd jednostki OSP</div>
-      <div class="lp-hero-grid">
-        <span><span class="lp-hero-dot dot-green"></span>Status wniosku: zaakceptowany</span>
-        <span><span class="lp-hero-dot dot-blue"></span>3 aktywne wnioski</span>
-        <span><span class="lp-hero-dot dot-amber"></span>2 wnioski oczekują na decyzję</span>
-        <span><span class="lp-hero-dot dot-gray"></span>Pełna historia zmian</span>
+      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
+        <div style="font-size:2.2rem;color:var(--lp-primary-light,#00A8AA);margin-bottom:0.7rem;">&#128658;</div>
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Baza strażaków</div>
+        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Dodawaj i edytuj dane członków jednostki.</div>
       </div>
-    </aside>
-  </section>
-
-  <section id="dlaczego" class="lp-section">
-    <div class="lp-section-header">
-      <div>
-        <p class="lp-section-kicker">Dlaczego Remiznet</p>
-        <h2 class="lp-section-title">Codzienna praca OSP w jednym miejscu</h2>
+      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
+        <div style="font-size:2.2rem;color:var(--lp-primary,#0F2338);margin-bottom:0.7rem;">&#128202;</div>
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Historia i raporty</div>
+        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Pełna historia decyzji i możliwość generowania raportów.</div>
       </div>
-      <p class="lp-section-description">
-        Panel jest zaprojektowany dla prezesów i urzędników gminnych, tak aby
-        zgłaszanie i opiniowanie wniosków zajmowało minuty, a nie godziny.
-      </p>
-    </div>
-
-    <div id="funkcje" class="lp-feature-grid">
-      <article class="lp-feature">
-        <p class="lp-feature-label">Panel</p>
-        <h3>Intuicyjny interfejs</h3>
-        <p>
-          Prezes widzi tylko swoje jednostki i strażaków, urzędnik — wszystkie
-          napływające wnioski wraz z ich statusem i historią decyzji.
-        </p>
-      </article>
-
-      <article class="lp-feature">
-        <p class="lp-feature-label">Historia decyzji</p>
-        <h3>Pełna przejrzystość</h3>
-        <p>
-          Każda zmiana statusu zapisywana jest w dzienniku zdarzeń, dzięki czemu
-          w dowolnej chwili można odtworzyć kto i kiedy podjął decyzję.
-        </p>
-      </article>
-
-      <article class="lp-feature">
-        <p class="lp-feature-label">Bezpieczeństwo</p>
-        <h3>Dane w Django</h3>
-        <p>
-          Uprawnienia oparte na rolach, logowanie po SSL oraz kopie zapasowe
-          chronią dane strażaków i dokumentów przed nieautoryzowanym dostępem.
-        </p>
-      </article>
-    </div>
-  </section>
-
-  <section id="jak-to-dziala" class="lp-section">
-    <div class="lp-how-it-works">
-      <div class="lp-how-it-steps">
-        <p class="lp-section-kicker">Jak to działa</p>
-        <h2 class="lp-section-title" style="margin-bottom:.6rem;">3 kroki obsługi wniosku</h2>
-        <ol>
-          <li>Prezes dodaje strażaków i składa wniosek z poziomu swojej jednostki.</li>
-          <li>Urzędnik gminy otrzymuje powiadomienie, przegląda dane i wprowadza decyzję.</li>
-          <li>System zapisuje całą historię — komentarze, daty i osoby podejmujące decyzje.</li>
-        </ol>
-      </div>
-      <div>
-        <p class="lp-badge">Dla gmin i jednostek OSP</p>
-        <p class="lp-how-lead">
-          Remiznet porządkuje proces decyzyjny, ułatwia rozliczenia i minimalizuje
-          liczbę pomyłek przy wypełnianiu dokumentów papierowych.
-        </p>
-        <p class="lp-how-note">
-          Gotowy do wdrożenia w wielu jednostkach gminy jednocześnie, z centralnym zarządzaniem użytkownikami.
-        </p>
+      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
+        <div style="font-size:2.2rem;color:var(--lp-accent,#CC2630);margin-bottom:0.7rem;">&#128161;</div>
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Automatyczne powiadomienia</div>
+        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Bądź na bieżąco z decyzjami i zmianami w systemie.</div>
       </div>
     </div>
-  </section>
-
-  <footer class="lp-footer">
-    © Remiznet — system zarządzania wnioskami OSP
-  </footer>
-</main>
+  </div>
+</section>
 {% endblock %}

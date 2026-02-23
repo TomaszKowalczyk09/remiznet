@@ -1,21 +1,31 @@
 {% load static %}
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="pl">
 <head>
-  <meta charset="utf-8">
-  <title>Remiznet - {% block title %}{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'osp/css/style.css' %}">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Remiznet{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'osp/css/style.css' %}">
 </head>
 <body>
-  <main class="site-main">
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="site-credits" aria-label="Credits">
-    <small>
-      Developed by Tomasz Kowalczyk<br>
-      Maintained by Łukasz Majka
-    </small>
-  </footer>
+    <header class="site-header">
+        <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
+            <a href="/" class="site-logo" style="font-weight:700;font-size:1.5rem;color:#fff;text-decoration:none;letter-spacing:.03em;">Remiznet</a>
+            <nav>
+                <a href="/" class="nav-link">Strona główna</a>
+                <a href="/login/" class="nav-link btn btn-primary" style="margin-left:1rem;">Zaloguj się</a>
+            </nav>
+        </div>
+    </header>
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">
+        <div class="container" style="text-align:center;padding:2rem 0;color:var(--muted,#6b7280);font-size:.95rem;">
+            &copy; Developed by <a href="https://www.linkedin.com/in/tomasz-kowalczyk-196aa6395" class="footer-link">Tomasz Kowalczyk</a>. All rights reserved.
+            <br>
+            Maintained by <a href="https://ph0tc.pl/" class="footer-link">Łukasz Majka</a>.
+        </div>
+    </footer>
 </body>
 </html>

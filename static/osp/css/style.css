@@ -73,17 +73,16 @@ button, .btn{cursor:pointer}
 
 /* Landing page (template) */
 :root {
-  --lp-primary: #1b4b72;
-  --lp-primary-light: #256fa8;
-  --lp-accent: #ffb800;
-  --lp-bg: #f5f7fb;
-  --lp-text: #1f2933;
+  --lp-primary: #0F2338;         /* granat */
+  --lp-primary-light: #00A8AA;   /* turkus (for accents) */
+  --lp-accent: #CC2630;          /* czerwień */
+  --lp-text: #0F2338;
 }
 
 /* Local landing header inside content block */
 .lp-header {
-  background: #0f172a;
-  color: #e5e7eb;
+  background: var(--lp-primary);
+  color: var(--lp-bg);
   padding: 1rem 0;
   margin: -2rem 0 0; /* neutralize .site-main padding on top */
 }
@@ -114,14 +113,15 @@ button, .btn{cursor:pointer}
 /* Ensure outline button for dark header */
 .btn-outline {
   background: transparent;
-  border: 1px solid rgba(229, 231, 235, .9);
-  color: #e5e7eb;
+  border: 1px solid var(--lp-accent);
+  color: var(--lp-accent);
 }
 
 .lp-main {
   max-width: 1100px;
   margin: 0 auto;
   padding: 3rem 1.5rem 4rem;
+  background: var(--lp-bg);
 }
 
 .lp-hero {
@@ -136,7 +136,7 @@ button, .btn{cursor:pointer}
   font-size: .8rem;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--lp-primary-light);
   font-weight: 600;
   margin-bottom: .75rem;
 }
@@ -147,16 +147,17 @@ button, .btn{cursor:pointer}
 }
 
 .lp-hero h1 span { color: var(--lp-primary); }
+/* No change needed, already uses --lp-primary */
 
 .lp-hero-subtitle {
   font-size: 1rem;
-  color: #4b5563;
+  color: var(--lp-primary);
   margin-bottom: 1.5rem;
 }
 
 .lp-hero-meta {
   font-size: .9rem;
-  color: #6b7280;
+  color: var(--lp-primary-light);
   margin-top: 1rem;
 }
 
@@ -167,12 +168,12 @@ button, .btn{cursor:pointer}
 }
 
 .lp-hero-outline {
-  color: #111827;
-  border-color: #d1d5db;
+  color: var(--lp-accent);
+  border-color: var(--lp-accent);
 }
 
 .lp-hero-card {
-  background: white;
+  background: var(--lp-bg);
   border-radius: 1.2rem;
   padding: 1.5rem 1.75rem;
   box-shadow: 0 18px 45px rgba(15, 23, 42, .12);
@@ -183,7 +184,7 @@ button, .btn{cursor:pointer}
   font-size: .85rem;
   text-transform: uppercase;
   letter-spacing: .12em;
-  color: #6b7280;
+  color: var(--lp-primary-light);
   margin-bottom: .5rem;
   font-weight: 600;
 }
@@ -208,9 +209,10 @@ button, .btn{cursor:pointer}
 }
 
 .dot-green { background: #22c55e; }
-.dot-blue { background: var(--lp-primary-light); }
+.dot-green { background: var(--lp-primary-light); }
+.dot-blue { background: var(--lp-primary); }
 .dot-amber { background: var(--lp-accent); }
-.dot-gray { background: #9ca3af; }
+.dot-gray { background: var(--lp-bg); }
 
 .lp-section { margin-bottom: 3rem; }
 
@@ -228,10 +230,12 @@ button, .btn{cursor:pointer}
   font-size: .8rem;
   text-transform: uppercase;
   letter-spacing: .12em;
-  color: #9ca3af;
+  color: var(--lp-primary-light);
 }
 
 .lp-section-description { font-size: .95rem; color: #4b5563; }
+/* Use main text color for description */
+.lp-section-description { font-size: .95rem; color: var(--lp-text); }
 
 .lp-feature-grid {
   display: grid;

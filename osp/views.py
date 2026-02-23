@@ -160,8 +160,8 @@ def panel(request):
         context['recent_submitted'] = submitted_qs[:8]
 
     if context['is_president']:
-        # For simplicity, show units created_by the president (or all units)
-        context['units'] = Unit.objects.all()
+        # Pokazuj tylko jednostki, których prezes jest twórcą
+        context['units'] = Unit.objects.filter(firefighters__created_by=user).distinct()
 
     return render(request, 'osp/panel.html', context)
 

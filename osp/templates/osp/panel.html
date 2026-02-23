@@ -117,14 +117,61 @@
       </div>
     </div>
   {% elif is_president %}
-    <h2>Panel</h2>
-    <h3>President actions</h3>
-    <p><a href="/osp/">View Units</a></p>
-    <ul>
-      {% for unit in units %}
-        <li>{{ unit.name }} - <a href="{% url 'osp:request_create' unit.pk %}">New request</a> | <a href="{% url 'osp:firefighter_add' unit.pk %}">Add firefighter</a></li>
-      {% endfor %}
-    </ul>
+    <div class="wp-admin">
+      <header class="wp-topbar">
+        <div class="wp-topbar-left">
+          <div class="wp-brand">Remiznet</div>
+          <span class="wp-sep">/</span>
+          <span class="wp-area">Panel prezesa OSP</span>
+        </div>
+        <div class="wp-topbar-right">
+          <span class="wp-user">{{ request.user.username }}</span>
+          <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+        </div>
+      </header>
+
+      <div class="wp-layout">
+        <aside class="wp-sidebar" aria-label="Nawigacja">
+          <a class="wp-menu-item is-active" href="{% url 'osp:panel' %}">Kokpit</a>
+          <a class="wp-menu-item" href="{% url 'osp:request_list' %}">Wnioski</a>
+          <a class="wp-menu-item" href="/admin/">Panel administracyjny</a>
+          <div class="wp-menu-sep"></div>
+          <a class="wp-menu-item" href="/">Strona główna</a>
+        </aside>
+
+        <section class="wp-content">
+          <div class="wp-page-head">
+            <div>
+              <h2 class="wp-title">Jednostki OSP</h2>
+              <p class="wp-subtitle">Twoje jednostki i szybkie akcje.</p>
+            </div>
+          </div>
+          <div class="wp-table-wrap" role="region" aria-label="Jednostki OSP">
+            <table class="wp-table">
+              <thead>
+                <tr>
+                  <th>Nazwa jednostki</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for unit in units %}
+                  <tr>
+                    <td>{{ unit.name }}</td>
+                    <td>
+                      <a class="wp-btn" href="{% url 'osp:request_create' unit.pk %}">Nowy wniosek</a>
+                      <a class="wp-btn" href="{% url 'osp:firefighter_add' unit.pk %}">Dodaj strażaka</a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2">Brak przypisanych jednostek</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
   {% else %}
     <section class="auth">
       <div class="auth-card">
