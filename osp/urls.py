@@ -19,4 +19,5 @@ urlpatterns = [
     path('requests/', views.request_list, name='request_list'),
     path('requests/<int:pk>/', views.request_detail, name='request_detail'),
     path('requests/<int:pk>/respond/', views.request_respond, name='request_respond'),
+    path('firefighters/<int:pk>/edit/', views.firefighter_edit, name='firefighter_edit'),
 ]

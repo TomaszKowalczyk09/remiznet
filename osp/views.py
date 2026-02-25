@@ -100,6 +100,32 @@ def firefighter_create(request, unit_pk):
         form = FirefighterForm()
     return render(request, 'osp/firefighter_form.html', {'form': form, 'unit': unit})
 
+@login_required
+def firefighter_edit(request, pk):
+    firefighter = get_object_or_404(Firefighter, pk=pk)
+    user = request.user
+    # Prezes może edytować tylko swoich strażaków
+    if is_president(user):
+        if firefighter.unit not in Unit.objects.filter(firefighters__created_by=user).distinct():
+            return HttpResponseForbidden('Brak dostępu do edycji tego strażaka')
+        can_edit = True
+    # Urzędnik ma tylko podgląd
+    elif is_official(user):
+        can_edit = False
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST' and can_edit:
+        form = FirefighterForm(request.POST, instance=firefighter)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:firefighter_list_unit', unit_pk=firefighter.unit.pk)
+    else:
+        form = FirefighterForm(instance=firefighter)
+        if not can_edit:
+            for field in form.fields.values():
+                field.disabled = True
+    return render(request, 'osp/firefighter_edit.html', {'form': form, 'firefighter': firefighter, 'can_edit': can_edit})
 
 @login_required
 def request_create(request, unit_pk):

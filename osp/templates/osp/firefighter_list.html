@@ -11,6 +11,7 @@
       <th>Stopień</th>
       <th>Email</th>
       <th>Telefon</th>
+      <th>Akcje</th>
     </tr>
   </thead>
   <tbody>
@@ -22,9 +23,10 @@
         <td>{{ ff.rank }}</td>
         <td>{{ ff.email }}</td>
         <td>{{ ff.phone }}</td>
+        <td><a href="{% url 'osp:firefighter_edit' ff.pk %}">Podgląd/Edytuj</a></td>
       </tr>
     {% empty %}
-      <tr><td colspan="6">Brak strażaków</td></tr>
+      <tr><td colspan="7">Brak strażaków</td></tr>
     {% endfor %}
   </tbody>
 </table>

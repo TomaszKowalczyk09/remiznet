@@ -4,7 +4,7 @@
 <h2>Jednostki</h2>
 <ul>
   {% for unit in units %}
-    <li>{{ unit.name }} - <a href="/osp/units/{{ unit.pk }}/requests/new/">Nowy wniosek</a> | <a href="/osp/units/{{ unit.pk }}/firefighters/add/">Dodaj strażaka</a></li>
+    <li>{{ unit.name }} - <a href="/osp/units/{{ unit.pk }}/requests/new/">Nowy wniosek</a> | <a href="/osp/units/{{ unit.pk }}/firefighters/add/">Dodaj strażaka</a> | <a href="/osp/units/{{ unit.pk }}/firefighters/">Lista strażaków</a></li>
   {% empty %}
     <li>Brak jednostek</li>
   {% endfor %}
