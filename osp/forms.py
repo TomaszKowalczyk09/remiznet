@@ -5,9 +5,22 @@ from .models import Firefighter, Request, RequestResponse
 
 
 class FirefighterForm(forms.ModelForm):
+    pesel = forms.CharField(label="PESEL", max_length=11, required=True)
+    birth_date = forms.DateField(label="Data urodzenia", required=True, widget=forms.DateInput(attrs={'type': 'date'}))
+    address = forms.CharField(label="Adres zamieszkania", max_length=300, required=True)
+
     class Meta:
         model = Firefighter
-        fields = ['first_name', 'last_name', 'email', 'phone', 'rank']
+        fields = ['first_name', 'last_name', 'pesel', 'birth_date', 'address', 'email', 'phone', 'rank']
+        widgets = {
+            'birth_date': forms.DateInput(attrs={'type': 'date'})
+        }
+
+    def clean_pesel(self):
+        pesel = self.cleaned_data['pesel']
+        if not pesel.isdigit() or len(pesel) != 11:
+            raise forms.ValidationError("PESEL musi mieć 11 cyfr.")
+        return pesel
 
 
 class RequestForm(forms.ModelForm):
