@@ -127,6 +127,7 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/osp/panel/'
 LOGOUT_REDIRECT_URL = '/'
 

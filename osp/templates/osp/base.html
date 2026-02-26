@@ -8,15 +8,6 @@
     <link rel="stylesheet" href="{% static 'osp/css/style.css' %}">
 </head>
 <body>
-    <header class="site-header">
-        <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
-            <a href="/" class="site-logo" style="font-weight:700;font-size:1.5rem;color:#fff;text-decoration:none;letter-spacing:.03em;">Remiznet</a>
-            <nav>
-                <a href="/" class="nav-link">Strona główna</a>
-                <a href="/login/" class="nav-link btn btn-primary" style="margin-left:1rem;">Zaloguj się</a>
-            </nav>
-        </div>
-    </header>
     <main class="site-main">
         {% block content %}{% endblock %}
     </main>
