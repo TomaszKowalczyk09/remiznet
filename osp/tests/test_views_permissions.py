@@ -59,3 +59,14 @@ class OspViewsTest(TestCase):
         # second response should be rejected (400)
         resp = self.client.post(reverse('osp:request_respond', args=[req.pk]), {'message': 'Another', 'action': 'REJECT'})
         self.assertEqual(resp.status_code, 400)
+
+    def test_panel_shows_units_assigned_by_president_field(self):
+        self.unit.president = self.president
+        self.unit.save(update_fields=['president'])
+
+        self.client.login(username='pres', password='pass')
+        resp = self.client.get(reverse('osp:panel'))
+
+        self.assertEqual(resp.status_code, 200)
+        units = list(resp.context['units'])
+        self.assertIn(self.unit, units)

@@ -3,22 +3,29 @@ from django.contrib.auth.decorators import login_required
 from .forms import SignRequestForm
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseForbidden, HttpResponseBadRequest
+from django.db.models import Q
 from .models import Unit, Firefighter, Request, RequestResponse
 from .forms import FirefighterForm, RequestForm, ResponseForm
 from django.contrib.auth.models import Group
 
+
+def president_units(user):
+    return Unit.objects.filter(
+        Q(president=user) | Q(firefighters__created_by=user)
+    ).distinct()
+
 def firefighter_list(request, unit_pk=None):
     user = request.user
     if is_official(user):
-        # Officials see all firefighters
+        # Urzędnicy widzą wszystkich strażaków
         if unit_pk:
             unit = get_object_or_404(Unit, pk=unit_pk)
             firefighters = Firefighter.objects.filter(unit=unit)
         else:
             firefighters = Firefighter.objects.all()
     elif is_president(user):
-        # Presidents see only their unit's firefighters
-        units = Unit.objects.filter(firefighters__created_by=user).distinct()
+        # Prezesi widzą tylko strażaków ze swoich jednostek
+        units = president_units(user)
         if unit_pk:
             unit = get_object_or_404(units, pk=unit_pk)
             firefighters = Firefighter.objects.filter(unit=unit)
@@ -86,7 +93,7 @@ def is_official(user):
 def firefighter_create(request, unit_pk):
     unit = get_object_or_404(Unit, pk=unit_pk)
     if not is_president(request.user):
-        return HttpResponseForbidden('Only presidents can add firefighters')
+        return HttpResponseForbidden('Tylko prezes może dodać strażaka')
 
     if request.method == 'POST':
         form = FirefighterForm(request.POST)
@@ -106,7 +113,7 @@ def firefighter_edit(request, pk):
     user = request.user
     # Prezes może edytować tylko swoich strażaków
     if is_president(user):
-        if firefighter.unit not in Unit.objects.filter(firefighters__created_by=user).distinct():
+        if firefighter.unit not in president_units(user):
             return HttpResponseForbidden('Brak dostępu do edycji tego strażaka')
         can_edit = True
     # Urzędnik ma tylko podgląd
@@ -131,7 +138,7 @@ def firefighter_edit(request, pk):
 def request_create(request, unit_pk):
     unit = get_object_or_404(Unit, pk=unit_pk)
     if not is_president(request.user):
-        return HttpResponseForbidden('Only presidents can create requests')
+        return HttpResponseForbidden('Tylko prezes może tworzyć wnioski')
 
     if request.method == 'POST':
         form = RequestForm(request.POST)
@@ -156,30 +163,42 @@ def request_list(request):
         # show requests for user's unit(s) — assuming one unit per president for simplicity
         qs = Request.objects.filter(created_by=request.user)
     else:
-        return HttpResponseForbidden('Not authorized')
+        return HttpResponseForbidden('Brak uprawnień')
     return render(request, 'osp/request_list.html', {'requests': qs})
 
 
 @login_required
 def request_detail(request, pk):
     req = get_object_or_404(Request, pk=pk)
-    if is_president(request.user) and req.created_by == request.user:
+    user = request.user
+    user_is_president = is_president(user)
+    user_is_official = is_official(user)
+
+    if user_is_president and req.created_by == user:
         pass
-    elif is_official(request.user):
+    elif user_is_official:
         pass
     else:
-        return HttpResponseForbidden('Not authorized to view this request')
-    return render(request, 'osp/request_detail.html', {'request_obj': req})
+        return HttpResponseForbidden('Brak uprawnień do podglądu tego wniosku')
+
+    context = {
+        'request_obj': req,
+        'is_president': user_is_president,
+        'is_official': user_is_official,
+        'can_sign': user_is_president and not req.signed_by,
+        'can_respond': user_is_official and req.status == Request.STATUS_SUBMITTED,
+    }
+    return render(request, 'osp/request_detail.html', context)
 
 
 @login_required
 def request_respond(request, pk):
     req = get_object_or_404(Request, pk=pk)
     if not is_official(request.user):
-        return HttpResponseForbidden('Only officials can respond')
+        return HttpResponseForbidden('Tylko urzędnik może odpowiedzieć na wniosek')
 
     if req.status in [Request.STATUS_ACCEPTED, Request.STATUS_REJECTED]:
-        return HttpResponseBadRequest('Request already finalized')
+        return HttpResponseBadRequest('Wniosek został już zakończony')
 
     if request.method == 'POST':
         form = ResponseForm(request.POST)
@@ -202,7 +221,7 @@ def request_respond(request, pk):
 
 @login_required
 def panel(request):
-    # Basic panel showing different options depending on role
+    # Panel pokazujący różne opcje zależnie od roli
     user = request.user
     context = {'is_president': is_president(user), 'is_official': is_official(user)}
 
@@ -212,8 +231,7 @@ def panel(request):
         context['recent_submitted'] = submitted_qs[:8]
 
     if context['is_president']:
-        # Pokazuj tylko jednostki, których prezes jest twórcą
-        context['units'] = Unit.objects.filter(firefighters__created_by=user).distinct()
+        context['units'] = president_units(user)
 
     return render(request, 'osp/panel.html', context)
 

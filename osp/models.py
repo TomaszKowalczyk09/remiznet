@@ -8,6 +8,7 @@ class Unit(models.Model):
     name = models.CharField(max_length=200)
     address = models.CharField(max_length=300, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    president = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='presided_units')
 
     def __str__(self):
         return self.name
@@ -17,9 +18,9 @@ class Firefighter(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='firefighters')
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=120)
-    pesel = models.CharField(max_length=11)
+    pesel = models.CharField(max_length=11, default='')
     birth_date = models.DateField()
-    address = models.CharField(max_length=300)
+    address = models.CharField(max_length=300, default='', blank=True)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=30, blank=True)
     rank = models.CharField(max_length=100, blank=True)

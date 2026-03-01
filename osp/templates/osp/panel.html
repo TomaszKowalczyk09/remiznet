@@ -6,6 +6,7 @@
     <div class="wp-admin">
       <header class="wp-topbar">
         <div class="wp-topbar-left">
+          <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
           <div class="wp-brand">Remiznet</div>
           <span class="wp-sep">/</span>
           <span class="wp-area">Panel urzędnika</span>
@@ -181,4 +182,16 @@
       </div>
     </section>
   {% endif %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const sidebar = document.querySelector('.wp-sidebar');
+      const toggle = document.getElementById('sidebar-toggle');
+
+      if (sidebar && toggle) {
+        toggle.addEventListener('click', function () {
+          sidebar.classList.toggle('active');
+        });
+      }
+    });
+  </script>
 {% endblock %}

@@ -12,6 +12,13 @@ class FirefighterForm(forms.ModelForm):
     class Meta:
         model = Firefighter
         fields = ['first_name', 'last_name', 'pesel', 'birth_date', 'address', 'email', 'phone', 'rank']
+        labels = {
+            'first_name': 'Imię',
+            'last_name': 'Nazwisko',
+            'email': 'E-mail',
+            'phone': 'Telefon',
+            'rank': 'Stopień',
+        }
         widgets = {
             'birth_date': forms.DateInput(attrs={'type': 'date'})
         }
@@ -29,9 +36,17 @@ class RequestForm(forms.ModelForm):
     class Meta:
         model = Request
         fields = ['title', 'description']
+        labels = {
+            'title': 'Tytuł',
+            'description': 'Opis',
+        }
 
 
 class ResponseForm(forms.ModelForm):
     class Meta:
         model = RequestResponse
         fields = ['message', 'action']
+        labels = {
+            'message': 'Wiadomość',
+            'action': 'Decyzja',
+        }

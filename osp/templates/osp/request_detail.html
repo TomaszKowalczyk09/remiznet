@@ -1,23 +1,115 @@
 {% extends 'osp/base.html' %}
 {% block title %}Szczegóły wniosku{% endblock %}
 {% block content %}
-  <h2>{{ request_obj.title }}</h2>
-  <p>{{ request_obj.description }}</p>
-  <p>Status: {{ request_obj.get_status_display }}</p>
-  {% if request_obj.signed_by %}
-    <p style="color:green;">Podpisany przez: {{ request_obj.signed_by }}<br>Data: {{ request_obj.signed_at|date:"Y-m-d H:i" }}</p>
-  {% elif user.is_authenticated and user.groups.filter(name__in=['Prezes OSP', 'president']).exists %}
-    <p><a class="btn btn-primary" href="{% url 'osp:request_sign' request_obj.pk %}">Podpisz wniosek</a></p>
-  {% endif %}
-  <h3>Odpowiedzi</h3>
-  <ul>
-    {% for resp in request_obj.responses.all %}
-      <li>{{ resp.created_at }} - {{ resp.get_action_display }} - {{ resp.responder }}: {{ resp.message }}</li>
-    {% empty %}
-      <li>Brak odpowiedzi</li>
-    {% endfor %}
-  </ul>
-  {% if user.groups.filter(name='official').exists and request_obj.status == 'SUBMITTED' %}
-    <p><a href="{% url 'osp:request_respond' request_obj.pk %}">Odpowiedz</a></p>
-  {% endif %}
+  <div class="wp-admin">
+    <header class="wp-topbar">
+      <div class="wp-topbar-left">
+        <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
+        <div class="wp-brand">Remiznet</div>
+        <span class="wp-sep">/</span>
+        <span class="wp-area">Szczegóły wniosku</span>
+      </div>
+      <div class="wp-topbar-right">
+        <span class="wp-user">{{ request.user.username }}</span>
+        <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+      </div>
+    </header>
+
+    <div class="wp-layout">
+      <aside class="wp-sidebar" aria-label="Nawigacja">
+        <a class="wp-menu-item" href="{% url 'osp:panel' %}">Kokpit</a>
+        <a class="wp-menu-item is-active" href="{% url 'osp:request_list' %}">Wnioski</a>
+        <a class="wp-menu-item" href="/admin/">Panel administracyjny</a>
+        <div class="wp-menu-sep"></div>
+        <a class="wp-menu-item" href="/">Strona główna</a>
+      </aside>
+
+      <section class="wp-content">
+        <div class="wp-page-head">
+          <div>
+            <h2 class="wp-title">{{ request_obj.title }}</h2>
+            <p class="wp-subtitle">Jednostka: {{ request_obj.unit }} • Status: {{ request_obj.get_status_display }}</p>
+          </div>
+          <div class="wp-actions">
+            <a class="wp-btn" href="{% url 'osp:request_list' %}">Powrót do listy</a>
+          </div>
+        </div>
+
+        <div class="wp-grid">
+          <section class="wp-card">
+            <header class="wp-card-head">
+              <h3>Opis wniosku</h3>
+            </header>
+            <p>{{ request_obj.description }}</p>
+          </section>
+
+          <section class="wp-card">
+            <header class="wp-card-head">
+              <h3>Podpis</h3>
+            </header>
+            {% if request_obj.signed_by %}
+              <p><strong>Podpisany przez:</strong> {{ request_obj.signed_by }}</p>
+              <p><strong>Data podpisu:</strong> {{ request_obj.signed_at|date:"Y-m-d H:i" }}</p>
+            {% elif can_sign %}
+              <a class="btn btn-primary" href="{% url 'osp:request_sign' request_obj.pk %}">Podpisz wniosek</a>
+            {% else %}
+              <p class="wp-empty">Wniosek nie został jeszcze podpisany.</p>
+            {% endif %}
+
+            {% if can_respond %}
+              <p style="margin-top: .8rem;">
+                <a class="wp-btn" href="{% url 'osp:request_respond' request_obj.pk %}">Odpowiedz na wniosek</a>
+              </p>
+            {% endif %}
+          </section>
+        </div>
+
+        <section class="wp-card" style="margin-top: 1rem;">
+          <header class="wp-card-head">
+            <h3>Odpowiedzi</h3>
+          </header>
+
+          {% if request_obj.responses.all %}
+            <div class="wp-table-wrap" role="region" aria-label="Odpowiedzi na wniosek">
+              <table class="wp-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Decyzja</th>
+                    <th>Użytkownik</th>
+                    <th>Wiadomość</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for resp in request_obj.responses.all %}
+                    <tr>
+                      <td>{{ resp.created_at|date:"Y-m-d H:i" }}</td>
+                      <td>{{ resp.get_action_display }}</td>
+                      <td>{{ resp.responder }}</td>
+                      <td class="wp-td-strong">{{ resp.message|default:"-" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="wp-empty">Brak odpowiedzi.</p>
+          {% endif %}
+        </section>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const sidebar = document.querySelector('.wp-sidebar');
+      const toggle = document.getElementById('sidebar-toggle');
+
+      if (sidebar && toggle) {
+        toggle.addEventListener('click', function () {
+          sidebar.classList.toggle('active');
+        });
+      }
+    });
+  </script>
 {% endblock %}
