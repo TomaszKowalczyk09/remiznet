@@ -11,16 +11,47 @@ class FirefighterForm(forms.ModelForm):
 
     class Meta:
         model = Firefighter
-        fields = ['first_name', 'last_name', 'pesel', 'birth_date', 'address', 'email', 'phone', 'rank']
+        fields = [
+            'first_name',
+            'middle_name',
+            'last_name',
+            'pesel',
+            'birth_date',
+            'address',
+            'postal_code',
+            'city',
+            'email',
+            'phone',
+            'rank',
+            'id_card_number',
+            'joined_at',
+            'driving_license_categories',
+            'medical_check_valid_until',
+            'emergency_contact_name',
+            'emergency_contact_phone',
+            'uniform_size',
+        ]
         labels = {
             'first_name': 'Imię',
+            'middle_name': 'Drugie imię',
             'last_name': 'Nazwisko',
             'email': 'E-mail',
             'phone': 'Telefon',
             'rank': 'Stopień',
+            'postal_code': 'Kod pocztowy',
+            'city': 'Miejscowość',
+            'id_card_number': 'Nr legitymacji',
+            'joined_at': 'Data wstąpienia do OSP',
+            'driving_license_categories': 'Kategorie prawa jazdy',
+            'medical_check_valid_until': 'Badania ważne do',
+            'emergency_contact_name': 'Kontakt awaryjny (osoba)',
+            'emergency_contact_phone': 'Kontakt awaryjny (telefon)',
+            'uniform_size': 'Rozmiar uniformu (Nomex)',
         }
         widgets = {
-            'birth_date': forms.DateInput(attrs={'type': 'date'})
+            'birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'joined_at': forms.DateInput(attrs={'type': 'date'}),
+            'medical_check_valid_until': forms.DateInput(attrs={'type': 'date'}),
         }
 
     def clean_pesel(self):

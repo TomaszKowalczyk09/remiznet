@@ -15,15 +15,45 @@ class Unit(models.Model):
 
 
 class Firefighter(models.Model):
+    UNIFORM_SIZE_XS = 'XS'
+    UNIFORM_SIZE_S = 'S'
+    UNIFORM_SIZE_M = 'M'
+    UNIFORM_SIZE_L = 'L'
+    UNIFORM_SIZE_XL = 'XL'
+    UNIFORM_SIZE_2XL = '2XL'
+    UNIFORM_SIZE_3XL = '3XL'
+    UNIFORM_SIZE_4XL = '4XL'
+
+    UNIFORM_SIZE_CHOICES = [
+        (UNIFORM_SIZE_XS, 'XS'),
+        (UNIFORM_SIZE_S, 'S'),
+        (UNIFORM_SIZE_M, 'M'),
+        (UNIFORM_SIZE_L, 'L'),
+        (UNIFORM_SIZE_XL, 'XL'),
+        (UNIFORM_SIZE_2XL, '2XL'),
+        (UNIFORM_SIZE_3XL, '3XL'),
+        (UNIFORM_SIZE_4XL, '4XL'),
+    ]
+
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='firefighters')
     first_name = models.CharField(max_length=120)
+    middle_name = models.CharField(max_length=120, blank=True)
     last_name = models.CharField(max_length=120)
     pesel = models.CharField(max_length=11, default='')
     birth_date = models.DateField()
     address = models.CharField(max_length=300, default='', blank=True)
+    postal_code = models.CharField(max_length=10, blank=True)
+    city = models.CharField(max_length=120, blank=True)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=30, blank=True)
     rank = models.CharField(max_length=100, blank=True)
+    id_card_number = models.CharField(max_length=50, blank=True)
+    joined_at = models.DateField(null=True, blank=True)
+    driving_license_categories = models.CharField(max_length=50, blank=True)
+    medical_check_valid_until = models.DateField(null=True, blank=True)
+    emergency_contact_name = models.CharField(max_length=200, blank=True)
+    emergency_contact_phone = models.CharField(max_length=30, blank=True)
+    uniform_size = models.CharField(max_length=5, blank=True, choices=UNIFORM_SIZE_CHOICES)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
