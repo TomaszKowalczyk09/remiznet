@@ -70,3 +70,25 @@ class OspViewsTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         units = list(resp.context['units'])
         self.assertIn(self.unit, units)
+
+    def test_request_pdf_available_for_authorized_user(self):
+        self.client.login(username='pres', password='pass')
+        self.client.post(reverse('osp:request_create', args=[self.unit.pk]), {'title': 'PDF', 'description': 'Treść', 'submit': '1'})
+        req = Request.objects.first()
+
+        resp = self.client.get(reverse('osp:request_pdf', args=[req.pk]))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Content-Type'], 'application/pdf')
+        self.assertIn(f'wniosek-{req.pk}.pdf', resp['Content-Disposition'])
+
+    def test_request_pdf_forbidden_for_unauthorized_user(self):
+        self.client.login(username='pres', password='pass')
+        self.client.post(reverse('osp:request_create', args=[self.unit.pk]), {'title': 'PDF', 'description': 'Treść', 'submit': '1'})
+        req = Request.objects.first()
+
+        self.client.logout()
+        self.client.login(username='other', password='pass')
+        resp = self.client.get(reverse('osp:request_pdf', args=[req.pk]))
+
+        self.assertEqual(resp.status_code, 403)

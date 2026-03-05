@@ -8,6 +8,7 @@ app_name = 'osp'
 
 urlpatterns = [
     path('requests/<int:pk>/sign/', views.request_sign, name='request_sign'),
+    path('requests/<int:pk>/pdf/', views.request_pdf, name='request_pdf'),
     path('', views.index, name='index'),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', views.logout_view, name='logout'),

@@ -31,6 +31,7 @@
             <p class="wp-subtitle">Jednostka: {{ request_obj.unit }} • Status: {{ request_obj.get_status_display }}</p>
           </div>
           <div class="wp-actions">
+            <a class="wp-btn" href="{% url 'osp:request_pdf' request_obj.pk %}">Pobierz PDF</a>
             <a class="wp-btn" href="{% url 'osp:request_list' %}">Powrót do listy</a>
           </div>
         </div>

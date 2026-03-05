@@ -2,11 +2,13 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from .forms import SignRequestForm
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseForbidden, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.db.models import Q
 from .models import Unit, Firefighter, Request, RequestResponse
 from .forms import FirefighterForm, RequestForm, ResponseForm
 from django.contrib.auth.models import Group
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 
 
 def president_units(user):
@@ -189,6 +191,79 @@ def request_detail(request, pk):
         'can_respond': user_is_official and req.status == Request.STATUS_SUBMITTED,
     }
     return render(request, 'osp/request_detail.html', context)
+
+
+@login_required
+def request_pdf(request, pk):
+    req = get_object_or_404(Request, pk=pk)
+    user = request.user
+    user_is_president = is_president(user)
+    user_is_official = is_official(user)
+
+    if not ((user_is_president and req.created_by == user) or user_is_official):
+        return HttpResponseForbidden('Brak uprawnień do pobrania PDF tego wniosku')
+
+    filename = f"wniosek-{req.pk}.pdf"
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    pdf = canvas.Canvas(response, pagesize=A4)
+    page_width, page_height = A4
+    text = pdf.beginText(40, page_height - 50)
+    text.setFont('Helvetica-Bold', 14)
+    text.textLine('Wniosek OSP')
+    text.setFont('Helvetica', 10)
+    text.textLine('')
+
+    lines = [
+        f'ID: {req.pk}',
+        f'Tytul: {req.title}',
+        f'Jednostka: {req.unit.name}',
+        f'Status: {req.get_status_display()}',
+        f'Utworzony przez: {req.created_by or "-"}',
+        f'Data utworzenia: {req.created_at.strftime("%Y-%m-%d %H:%M")}',
+        '',
+        'Opis:',
+    ]
+
+    for line in lines:
+        text.textLine(line)
+
+    for paragraph_line in req.description.splitlines() or ['-']:
+        current_line = paragraph_line
+        while len(current_line) > 110:
+            text.textLine(current_line[:110])
+            current_line = current_line[110:]
+        text.textLine(current_line)
+
+    text.textLine('')
+    text.textLine('Podpis:')
+    if req.signed_by and req.signed_at:
+        text.textLine(f'Podpisany przez: {req.signed_by}')
+        text.textLine(f'Data podpisu: {req.signed_at.strftime("%Y-%m-%d %H:%M")}')
+    else:
+        text.textLine('Brak podpisu')
+
+    text.textLine('')
+    text.textLine('Odpowiedzi:')
+    responses = req.responses.select_related('responder').order_by('created_at')
+    if responses.exists():
+        for resp in responses:
+            summary = f'- {resp.created_at.strftime("%Y-%m-%d %H:%M")} | {resp.get_action_display()} | {resp.responder or "-"}'
+            text.textLine(summary[:120])
+            if resp.message:
+                message_line = f'  {resp.message}'
+                while len(message_line) > 118:
+                    text.textLine(message_line[:118])
+                    message_line = f'  {message_line[118:]}'
+                text.textLine(message_line)
+    else:
+        text.textLine('Brak odpowiedzi')
+
+    pdf.drawText(text)
+    pdf.showPage()
+    pdf.save()
+    return response
 
 
 @login_required
