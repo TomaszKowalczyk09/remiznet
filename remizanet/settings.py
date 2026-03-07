@@ -124,3 +124,8 @@ STATICFILES_DIRS = [
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/osp/panel/'
 LOGOUT_REDIRECT_URL = '/'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://remiznet.gminagryfino.pl',
+    'http://remiznet.gminagryfino.pl'
+]
