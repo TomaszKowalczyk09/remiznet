@@ -1,10 +1,59 @@
 {% extends 'osp/base.html' %}
 {% block title %}Edytuj strażaka{% endblock %}
 {% block content %}
-  <h2>Edytuj strażaka: {{ firefighter.first_name }} {{ firefighter.last_name }}</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Zapisz zmiany</button>
-  </form>
+  <div class="wp-admin">
+    <header class="wp-topbar">
+      <div class="wp-topbar-left">
+        <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
+        <div class="wp-brand">Remiznet</div>
+        <span class="wp-sep">/</span>
+        <span class="wp-area">Edycja strażaka</span>
+      </div>
+      <div class="wp-topbar-right">
+        <span class="wp-user">{{ request.user.username }}</span>
+        <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+      </div>
+    </header>
+
+    <div class="wp-layout">
+      {% include 'osp/_sidebar.html' with sidebar_active='firefighters' %}
+
+      <section class="wp-content">
+        <div class="wp-page-head">
+          <div>
+            <h2 class="wp-title">Edytuj strażaka: {{ firefighter.first_name }} {{ firefighter.last_name }}</h2>
+            <p class="wp-subtitle">Jednostka: {{ firefighter.unit.name }}</p>
+          </div>
+          <div class="wp-actions">
+            <a class="wp-btn" href="{% url 'osp:firefighter_list_unit' firefighter.unit.pk %}">Powrót do listy</a>
+          </div>
+        </div>
+
+        <section class="wp-card wp-form-card">
+          <form method="post" class="wp-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            {% if can_edit %}
+              <div class="wp-form-actions">
+                <button class="btn btn-primary" type="submit">Zapisz zmiany</button>
+              </div>
+            {% endif %}
+          </form>
+        </section>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const sidebar = document.querySelector('.wp-sidebar');
+      const toggle = document.getElementById('sidebar-toggle');
+
+      if (sidebar && toggle) {
+        toggle.addEventListener('click', function () {
+          sidebar.classList.toggle('active');
+        });
+      }
+    });
+  </script>
 {% endblock %}

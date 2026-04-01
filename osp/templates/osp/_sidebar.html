@@ -1,0 +1,13 @@
+<aside class="wp-sidebar" aria-label="Nawigacja">
+  <a class="wp-menu-item{% if sidebar_active == 'panel' %} is-active{% endif %}" href="{% url 'osp:panel' %}">Kokpit</a>
+  <a class="wp-menu-item{% if sidebar_active == 'requests' %} is-active{% endif %}" href="{% url 'osp:request_list' %}">
+    Wnioski
+    {% if submitted_count %}<span class="wp-badge">{{ submitted_count }}</span>{% endif %}
+  </a>
+  <a class="wp-menu-item{% if sidebar_active == 'firefighters' %} is-active{% endif %}" href="{% url 'osp:firefighter_list' %}">Strażacy</a>
+  <a class="wp-menu-item{% if sidebar_active == 'equipment' %} is-active{% endif %}" href="{% url 'osp:equipment_list' %}">Sprzęt SiS</a>
+  <a class="wp-menu-item{% if sidebar_active == 'personnel' %} is-active{% endif %}" href="{% url 'osp:personnel_list' %}">Siły i środki</a>
+  <a class="wp-menu-item" href="/admin/">Panel administracyjny</a>
+  <div class="wp-menu-sep"></div>
+  <a class="wp-menu-item" href="/">Strona główna</a>
+</aside>

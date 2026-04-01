@@ -15,13 +15,7 @@
   </header>
 
   <div class="wp-layout">
-    <aside class="wp-sidebar" aria-label="Nawigacja">
-      <a class="wp-menu-item" href="{% url 'osp:panel' %}">Kokpit</a>
-      <a class="wp-menu-item is-active" href="{% url 'osp:request_list' %}">Wnioski</a>
-      <a class="wp-menu-item" href="/admin/">Panel administracyjny</a>
-      <div class="wp-menu-sep"></div>
-      <a class="wp-menu-item" href="/">Strona główna</a>
-    </aside>
+    {% include 'osp/_sidebar.html' with sidebar_active='requests' %}
 
     <section class="wp-content">
       <div class="wp-page-head">
