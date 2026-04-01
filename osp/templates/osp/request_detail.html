@@ -46,7 +46,7 @@
 
           <section class="wp-card">
             <header class="wp-card-head">
-              <h3>Podpis</h3>
+              <h3>Obieg KSRG</h3>
             </header>
             {% if request_obj.signed_by %}
               <p><strong>Podpisany przez:</strong> {{ request_obj.signed_by }}</p>
@@ -55,6 +55,15 @@
               <a class="btn btn-primary" href="{% url 'osp:request_sign' request_obj.pk %}">Podpisz wniosek</a>
             {% else %}
               <p class="wp-empty">Wniosek nie został jeszcze podpisany.</p>
+            {% endif %}
+
+            {% if request_obj.archived_by %}
+              <p style="margin-top: .8rem;"><strong>Zarchiwizowany przez:</strong> {{ request_obj.archived_by }}</p>
+              <p><strong>Data archiwizacji:</strong> {{ request_obj.archived_at|date:"Y-m-d H:i" }}</p>
+            {% elif can_archive %}
+              <p style="margin-top: .8rem;">
+                <a class="wp-btn" href="{% url 'osp:request_archive' request_obj.pk %}">Archiwizuj wniosek</a>
+              </p>
             {% endif %}
 
             {% if can_respond %}
@@ -67,10 +76,38 @@
 
         <section class="wp-card" style="margin-top: 1rem;">
           <header class="wp-card-head">
+            <h3>Zasoby SiS przypisane do wniosku</h3>
+          </header>
+
+          <h4>Sprzęt</h4>
+          {% if request_obj.equipment_resources.exists %}
+            <ul>
+              {% for equipment in request_obj.equipment_resources.all %}
+                <li>{{ equipment.name }} ({{ equipment.inventory_number }}) - {{ equipment.get_condition_display }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="wp-empty">Brak przypisanego sprzętu.</p>
+          {% endif %}
+
+          <h4>Siły i środki osobowe</h4>
+          {% if request_obj.personnel_resources.exists %}
+            <ul>
+              {% for personnel in request_obj.personnel_resources.all %}
+                <li>{{ personnel.role_name }} - {{ personnel.firefighter|default:"Bez przypisanego strażaka" }} ({{ personnel.get_readiness_display }})</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="wp-empty">Brak przypisanych sił i środków osobowych.</p>
+          {% endif %}
+        </section>
+
+        <section class="wp-card" style="margin-top: 1rem;">
+          <header class="wp-card-head">
             <h3>Odpowiedzi</h3>
           </header>
 
-          {% if request_obj.responses.all %}
+          {% if request_obj.responses.exists %}
             <div class="wp-table-wrap" role="region" aria-label="Odpowiedzi na wniosek">
               <table class="wp-table">
                 <thead>

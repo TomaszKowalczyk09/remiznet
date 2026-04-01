@@ -1,5 +1,5 @@
 {% extends 'osp/base.html' %}
-{% block title %}Podpisz wniosek{% endblock %}
+{% block title %}{% if archive_mode %}Archiwizuj wniosek{% else %}Podpisz wniosek{% endif %}{% endblock %}
 {% block content %}
   <div class="wp-admin">
     <header class="wp-topbar">
@@ -7,7 +7,7 @@
         <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
         <div class="wp-brand">Remiznet</div>
         <span class="wp-sep">/</span>
-        <span class="wp-area">Podpisz wniosek</span>
+        <span class="wp-area">{% if archive_mode %}Archiwizuj wniosek{% else %}Podpisz wniosek{% endif %}</span>
       </div>
       <div class="wp-topbar-right">
         <span class="wp-user">{{ request.user.username }}</span>
@@ -27,7 +27,7 @@
       <section class="wp-content">
         <div class="wp-page-head">
           <div>
-            <h2 class="wp-title">Podpisz wniosek: {{ request_obj.title }}</h2>
+            <h2 class="wp-title">{% if archive_mode %}Archiwizuj wniosek{% else %}Podpisz wniosek{% endif %}: {{ request_obj.title }}</h2>
             <p class="wp-subtitle">Jednostka: {{ request_obj.unit }} • Status: {{ request_obj.get_status_display }}</p>
           </div>
           <div class="wp-actions">
@@ -40,7 +40,7 @@
             {% csrf_token %}
             {{ form.as_p }}
             <div class="wp-form-actions">
-              <button class="btn btn-primary" type="submit">Podpisz</button>
+              <button class="btn btn-primary" type="submit">{% if archive_mode %}Archiwizuj{% else %}Podpisz{% endif %}</button>
             </div>
           </form>
         </section>

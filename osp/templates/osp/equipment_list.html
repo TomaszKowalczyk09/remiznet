@@ -1,0 +1,65 @@
+{% extends 'osp/base.html' %}
+{% block title %}Sprzęt SiS{% endblock %}
+{% block content %}
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Sprzęt SiS</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    <aside class="wp-sidebar" aria-label="Nawigacja">
+      <a class="wp-menu-item" href="{% url 'osp:panel' %}">Kokpit</a>
+      <a class="wp-menu-item is-active" href="{% url 'osp:equipment_list' %}">Sprzęt SiS</a>
+      <a class="wp-menu-item" href="{% url 'osp:request_list' %}">Wnioski</a>
+      <div class="wp-menu-sep"></div>
+      <a class="wp-menu-item" href="/">Strona główna</a>
+    </aside>
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">Ewidencja sprzętu SiS</h2>
+          <p class="wp-subtitle">Przegląd zasobów sprzętowych.</p>
+        </div>
+      </div>
+
+      <div class="wp-table-wrap" role="region" aria-label="Ewidencja sprzętu SiS">
+        <table class="wp-table">
+          <thead>
+            <tr>
+              <th>Nazwa</th>
+              <th>Jednostka</th>
+              <th>Kategoria</th>
+              <th>Nr inwentarzowy</th>
+              <th>Stan</th>
+              <th>Przegląd ważny do</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for equipment in equipment_list %}
+              <tr>
+                <td class="wp-td-strong">{{ equipment.name }}</td>
+                <td>{{ equipment.unit }}</td>
+                <td>{{ equipment.category|default:'-' }}</td>
+                <td>{{ equipment.inventory_number }}</td>
+                <td>{{ equipment.get_condition_display }}</td>
+                <td>{{ equipment.inspection_valid_until|date:'Y-m-d'|default:'-' }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6">Brak pozycji sprzętowych.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

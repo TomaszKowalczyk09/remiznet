@@ -1,0 +1,63 @@
+{% extends 'osp/base.html' %}
+{% block title %}Siły i środki{% endblock %}
+{% block content %}
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Siły i środki</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    <aside class="wp-sidebar" aria-label="Nawigacja">
+      <a class="wp-menu-item" href="{% url 'osp:panel' %}">Kokpit</a>
+      <a class="wp-menu-item is-active" href="{% url 'osp:personnel_list' %}">Siły i środki</a>
+      <a class="wp-menu-item" href="{% url 'osp:request_list' %}">Wnioski</a>
+      <div class="wp-menu-sep"></div>
+      <a class="wp-menu-item" href="/">Strona główna</a>
+    </aside>
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">Ewidencja sił i środków osobowych</h2>
+          <p class="wp-subtitle">Przegląd gotowości i kwalifikacji.</p>
+        </div>
+      </div>
+
+      <div class="wp-table-wrap" role="region" aria-label="Ewidencja sił i środków osobowych">
+        <table class="wp-table">
+          <thead>
+            <tr>
+              <th>Jednostka</th>
+              <th>Strażak</th>
+              <th>Rola</th>
+              <th>Gotowość</th>
+              <th>Kwalifikacje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for personnel in personnel_list %}
+              <tr>
+                <td>{{ personnel.unit }}</td>
+                <td>{{ personnel.firefighter|default:'-' }}</td>
+                <td class="wp-td-strong">{{ personnel.role_name }}</td>
+                <td>{{ personnel.get_readiness_display }}</td>
+                <td>{{ personnel.qualifications|default:'-' }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Brak pozycji osobowych.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -66,12 +66,14 @@ class Request(models.Model):
     STATUS_SUBMITTED = 'SUBMITTED'
     STATUS_ACCEPTED = 'ACCEPTED'
     STATUS_REJECTED = 'REJECTED'
+    STATUS_ARCHIVED = 'ARCHIVED'
 
     STATUS_CHOICES = [
         (STATUS_DRAFT, 'Roboczy'),
         (STATUS_SUBMITTED, 'Złożony'),
         (STATUS_ACCEPTED, 'Zaakceptowany'),
         (STATUS_REJECTED, 'Odrzucony'),
+        (STATUS_ARCHIVED, 'Zarchiwizowany'),
     ]
 
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='requests')
@@ -83,6 +85,10 @@ class Request(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     signed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='signed_requests')
     signed_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='archived_requests')
+    archived_at = models.DateTimeField(null=True, blank=True)
+    equipment_resources = models.ManyToManyField('Equipment', blank=True, related_name='requests')
+    personnel_resources = models.ManyToManyField('PersonnelResource', blank=True, related_name='requests')
 
     def __str__(self):
         return f"{self.title} - {self.unit} [{self.status}]"
@@ -107,3 +113,78 @@ class RequestResponse(models.Model):
 
     def __str__(self):
         return f"{self.action} by {self.responder} on {self.request}"
+
+
+class Equipment(models.Model):
+    CONDITION_READY = 'READY'
+    CONDITION_SERVICE = 'SERVICE'
+    CONDITION_UNAVAILABLE = 'UNAVAILABLE'
+
+    CONDITION_CHOICES = [
+        (CONDITION_READY, 'Gotowy'),
+        (CONDITION_SERVICE, 'W serwisie'),
+        (CONDITION_UNAVAILABLE, 'Niedostępny'),
+    ]
+
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='equipment')
+    name = models.CharField(max_length=200)
+    category = models.CharField(max_length=120, blank=True)
+    inventory_number = models.CharField(max_length=100)
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default=CONDITION_READY)
+    inspection_valid_until = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('unit', 'inventory_number')
+
+    def __str__(self):
+        return f"{self.name} ({self.unit})"
+
+
+class PersonnelResource(models.Model):
+    READINESS_AVAILABLE = 'AVAILABLE'
+    READINESS_ON_CALL = 'ON_CALL'
+    READINESS_UNAVAILABLE = 'UNAVAILABLE'
+
+    READINESS_CHOICES = [
+        (READINESS_AVAILABLE, 'Dostępny'),
+        (READINESS_ON_CALL, 'Pod telefonem'),
+        (READINESS_UNAVAILABLE, 'Niedostępny'),
+    ]
+
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='personnel_resources')
+    firefighter = models.ForeignKey(Firefighter, on_delete=models.SET_NULL, null=True, blank=True, related_name='personnel_entries')
+    role_name = models.CharField(max_length=120)
+    readiness = models.CharField(max_length=20, choices=READINESS_CHOICES, default=READINESS_AVAILABLE)
+    qualifications = models.CharField(max_length=250, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        if self.firefighter:
+            return f"{self.firefighter} - {self.role_name}"
+        return f"{self.role_name} ({self.unit})"
+
+
+class SisAuditLog(models.Model):
+    EVENT_RESOURCE_UPDATE = 'RESOURCE_UPDATE'
+    EVENT_REQUEST_FLOW = 'REQUEST_FLOW'
+
+    EVENT_CHOICES = [
+        (EVENT_RESOURCE_UPDATE, 'Zmiana zasobów SiS'),
+        (EVENT_REQUEST_FLOW, 'Zmiana obiegu KSRG'),
+    ]
+
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='sis_audit_logs')
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, null=True, blank=True, related_name='sis_audit_logs')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    event_type = models.CharField(max_length=30, choices=EVENT_CHOICES)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} - {self.unit} ({self.created_at:%Y-%m-%d %H:%M})"

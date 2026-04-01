@@ -1,0 +1,46 @@
+{% extends 'osp/base.html' %}
+{% block title %}Nowy sprzęt SiS{% endblock %}
+{% block content %}
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Nowy sprzęt SiS</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    <aside class="wp-sidebar" aria-label="Nawigacja">
+      <a class="wp-menu-item" href="{% url 'osp:panel' %}">Kokpit</a>
+      <a class="wp-menu-item is-active" href="{% url 'osp:equipment_list_unit' unit.pk %}">Sprzęt SiS</a>
+      <a class="wp-menu-item" href="{% url 'osp:request_list' %}">Wnioski</a>
+      <div class="wp-menu-sep"></div>
+      <a class="wp-menu-item" href="/">Strona główna</a>
+    </aside>
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">Nowy sprzęt SiS</h2>
+          <p class="wp-subtitle">Jednostka: {{ unit.name }}</p>
+        </div>
+      </div>
+
+      <section class="wp-card wp-form-card">
+        <form method="post" class="wp-form">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <div class="wp-form-actions">
+            <button class="btn btn-primary" type="submit">Zapisz</button>
+          </div>
+        </form>
+      </section>
+    </section>
+  </div>
+</div>
+{% endblock %}

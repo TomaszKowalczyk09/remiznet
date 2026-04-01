@@ -1,7 +1,13 @@
 from django import forms
+from .models import Equipment, Firefighter, PersonnelResource, Request, RequestResponse
+
+
 class SignRequestForm(forms.Form):
     confirm = forms.BooleanField(label="Potwierdzam podpisanie wniosku", required=True)
-from .models import Firefighter, Request, RequestResponse
+
+
+class ArchiveRequestForm(forms.Form):
+    confirm = forms.BooleanField(label="Potwierdzam archiwizację wniosku", required=True)
 
 
 class FirefighterForm(forms.ModelForm):
@@ -63,14 +69,35 @@ class FirefighterForm(forms.ModelForm):
 
 class RequestForm(forms.ModelForm):
     submit = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput())
+    equipment_resources = forms.ModelMultipleChoiceField(
+        queryset=Equipment.objects.none(),
+        required=False,
+        label='Sprzęt (SiS)',
+        widget=forms.SelectMultiple(attrs={'size': 6}),
+    )
+    personnel_resources = forms.ModelMultipleChoiceField(
+        queryset=PersonnelResource.objects.none(),
+        required=False,
+        label='Siły i środki osobowe (SiS)',
+        widget=forms.SelectMultiple(attrs={'size': 6}),
+    )
 
     class Meta:
         model = Request
-        fields = ['title', 'description']
+        fields = ['title', 'description', 'equipment_resources', 'personnel_resources']
         labels = {
             'title': 'Tytuł',
             'description': 'Opis',
         }
+
+    def __init__(self, *args, unit=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if unit is not None:
+            self.fields['equipment_resources'].queryset = Equipment.objects.filter(unit=unit).order_by('name')
+            self.fields['personnel_resources'].queryset = PersonnelResource.objects.filter(unit=unit).order_by('role_name')
+        else:
+            self.fields['equipment_resources'].queryset = Equipment.objects.none()
+            self.fields['personnel_resources'].queryset = PersonnelResource.objects.none()
 
 
 class ResponseForm(forms.ModelForm):
@@ -81,3 +108,40 @@ class ResponseForm(forms.ModelForm):
             'message': 'Wiadomość',
             'action': 'Decyzja',
         }
+
+
+class EquipmentForm(forms.ModelForm):
+    class Meta:
+        model = Equipment
+        fields = ['name', 'category', 'inventory_number', 'condition', 'inspection_valid_until', 'notes']
+        labels = {
+            'name': 'Nazwa sprzętu',
+            'category': 'Kategoria',
+            'inventory_number': 'Numer inwentarzowy',
+            'condition': 'Stan',
+            'inspection_valid_until': 'Przegląd ważny do',
+            'notes': 'Uwagi',
+        }
+        widgets = {
+            'inspection_valid_until': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+
+class PersonnelResourceForm(forms.ModelForm):
+    class Meta:
+        model = PersonnelResource
+        fields = ['firefighter', 'role_name', 'readiness', 'qualifications', 'notes']
+        labels = {
+            'firefighter': 'Strażak',
+            'role_name': 'Rola',
+            'readiness': 'Gotowość',
+            'qualifications': 'Kwalifikacje',
+            'notes': 'Uwagi',
+        }
+
+    def __init__(self, *args, unit=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if unit is not None:
+            self.fields['firefighter'].queryset = Firefighter.objects.filter(unit=unit).order_by('last_name', 'first_name')
+        else:
+            self.fields['firefighter'].queryset = Firefighter.objects.none()

@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from osp.models import Unit, Firefighter, Request, RequestResponse
+from osp.models import Equipment, Firefighter, PersonnelResource, Request, RequestResponse, Unit
 from django.contrib.auth.models import Group
 
 User = get_user_model()
@@ -91,4 +91,73 @@ class OspViewsTest(TestCase):
         self.client.login(username='other', password='pass')
         resp = self.client.get(reverse('osp:request_pdf', args=[req.pk]))
 
+        self.assertEqual(resp.status_code, 403)
+
+    def test_full_ksrg_flow_requires_decision_then_sign_then_archive(self):
+        self.client.login(username='pres', password='pass')
+        self.client.post(reverse('osp:request_create', args=[self.unit.pk]), {'title': 'Flow', 'description': 'Desc', 'submit': '1'})
+        req = Request.objects.first()
+
+        # cannot sign before official decision
+        sign_resp = self.client.post(reverse('osp:request_sign', args=[req.pk]), {'confirm': True})
+        self.assertEqual(sign_resp.status_code, 400)
+
+        self.client.logout()
+        self.client.login(username='off', password='pass')
+        self.client.post(reverse('osp:request_respond', args=[req.pk]), {'message': 'OK', 'action': 'ACCEPT'})
+
+        # official cannot archive before president signature
+        archive_before_sign = self.client.post(reverse('osp:request_archive', args=[req.pk]), {'confirm': True})
+        self.assertEqual(archive_before_sign.status_code, 400)
+
+        self.client.logout()
+        self.client.login(username='pres', password='pass')
+        sign_after_decision = self.client.post(reverse('osp:request_sign', args=[req.pk]), {'confirm': True})
+        self.assertEqual(sign_after_decision.status_code, 302)
+
+        self.client.logout()
+        self.client.login(username='off', password='pass')
+        archive_resp = self.client.post(reverse('osp:request_archive', args=[req.pk]), {'confirm': True})
+        self.assertEqual(archive_resp.status_code, 302)
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, Request.STATUS_ARCHIVED)
+        self.assertIsNotNone(req.signed_at)
+        self.assertIsNotNone(req.archived_at)
+
+    def test_request_can_store_sis_resources(self):
+        equipment = Equipment.objects.create(
+            unit=self.unit,
+            name='Motopompa',
+            category='Pompy',
+            inventory_number='EQ-001',
+        )
+        personnel = PersonnelResource.objects.create(
+            unit=self.unit,
+            role_name='Dowódca zastępu',
+        )
+
+        self.client.login(username='pres', password='pass')
+        resp = self.client.post(
+            reverse('osp:request_create', args=[self.unit.pk]),
+            {
+                'title': 'Zgłoszenie KSRG',
+                'description': 'Potrzebne wsparcie',
+                'submit': '1',
+                'equipment_resources': [equipment.pk],
+                'personnel_resources': [personnel.pk],
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+
+        req = Request.objects.first()
+        self.assertEqual(req.equipment_resources.count(), 1)
+        self.assertEqual(req.personnel_resources.count(), 1)
+
+    def test_unauthorized_cannot_add_equipment(self):
+        self.client.login(username='other', password='pass')
+        resp = self.client.post(
+            reverse('osp:equipment_add', args=[self.unit.pk]),
+            {'name': 'Agregat', 'inventory_number': 'EQ-999'},
+        )
         self.assertEqual(resp.status_code, 403)

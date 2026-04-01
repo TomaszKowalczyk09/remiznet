@@ -163,6 +163,10 @@
                       <a class="wp-btn" href="{% url 'osp:request_create' unit.pk %}">Nowy wniosek</a>
                       <a class="wp-btn" href="{% url 'osp:firefighter_add' unit.pk %}">Dodaj strażaka</a>
                       <a class="wp-btn" href="{% url 'osp:firefighter_list_unit' unit.pk %}">Strażacy</a>
+                      <a class="wp-btn" href="{% url 'osp:equipment_add' unit.pk %}">Dodaj sprzęt SiS</a>
+                      <a class="wp-btn" href="{% url 'osp:equipment_list_unit' unit.pk %}">Sprzęt SiS</a>
+                      <a class="wp-btn" href="{% url 'osp:personnel_add' unit.pk %}">Dodaj siły/środki</a>
+                      <a class="wp-btn" href="{% url 'osp:personnel_list_unit' unit.pk %}">Siły/środki</a>
                     </td>
                   </tr>
                 {% empty %}
