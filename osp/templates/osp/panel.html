@@ -3,7 +3,7 @@
 
 {% block content %}
   {% if is_official %}
-    <div class="wp-admin">
+    <div class="wp-admin panel-page panel-page--official">
       <header class="wp-topbar">
         <div class="wp-topbar-left">
           <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
@@ -23,32 +23,31 @@
         <section class="wp-content">
           <div class="wp-page-head">
             <div>
-              <h2 class="wp-title">Kokpit</h2>
-              <p class="wp-subtitle">Najważniejsze rzeczy na teraz.</p>
+              <h2 class="wp-title">Dashboard urzędnika</h2>
+              <p class="wp-subtitle">Centrum decyzji i nadzoru nad obiegiem KSRG.</p>
             </div>
             <div class="wp-actions">
               <a class="btn btn-primary" href="{% url 'osp:request_list' %}">Przejdź do wniosków</a>
             </div>
           </div>
 
-          <div class="wp-kpis">
-            <article class="wp-kpi wp-kpi--warning">
-              <div class="wp-kpi-label">Do rozpatrzenia</div>
-              <div class="wp-kpi-value">{{ submitted_count|default:0 }}</div>
-              <div class="wp-kpi-hint">Wnioski złożone przez OSP</div>
-            </article>
-
-            <article class="wp-kpi">
-              <div class="wp-kpi-label">Skrót</div>
-              <div class="wp-kpi-value">Wnioski</div>
-              <div class="wp-kpi-hint">Lista i szczegóły + odpowiedź</div>
-            </article>
-
-            <article class="wp-kpi">
-              <div class="wp-kpi-label">Panel</div>
-              <div class="wp-kpi-value">Admin</div>
-              <div class="wp-kpi-hint">Zarządzanie słownikami/użytkownikami</div>
-            </article>
+          <div class="mx-tiles">
+            <a class="mx-tile mx-tile--blue" href="{% url 'osp:request_list' %}">
+              <span class="mx-tile-title">Do rozpatrzenia</span>
+              <span class="mx-tile-value">{{ submitted_count|default:0 }}</span>
+            </a>
+            <a class="mx-tile mx-tile--green" href="{% url 'osp:request_list' %}">
+              <span class="mx-tile-title">Wnioski</span>
+              <span class="mx-tile-value">Przegląd</span>
+            </a>
+            <a class="mx-tile mx-tile--yellow" href="{% url 'osp:request_list' %}">
+              <span class="mx-tile-title">Workflow KSRG</span>
+              <span class="mx-tile-value">Decyzje</span>
+            </a>
+            <a class="mx-tile mx-tile--orange" href="/admin/">
+              <span class="mx-tile-title">Panel administracyjny</span>
+              <span class="mx-tile-value">Ustawienia</span>
+            </a>
           </div>
 
           <div class="wp-grid">
@@ -92,16 +91,25 @@
 
             <section class="wp-card">
               <header class="wp-card-head">
-                <h3>Szybkie kroki</h3>
+                <h3>Status operacyjny</h3>
               </header>
-              <ol class="wp-steps">
-                <li>Wejdź w <strong>Wnioski do decyzji</strong>.</li>
-                <li>Otwórz wniosek i sprawdź szczegóły.</li>
-                <li>Kliknij <strong>Odpowiedz</strong> i wprowadź decyzję.</li>
-              </ol>
-              <div class="wp-callout">
-                <div class="wp-callout-title">Wskazówka</div>
-                <div class="wp-callout-text">Najpilniejsze są wnioski bez odpowiedzi (status: „Złożony”).</div>
+              <div class="mx-stat-grid">
+                <div class="mx-stat-box">
+                  <div class="mx-stat-value">{{ submitted_count|default:0 }}</div>
+                  <div class="mx-stat-label">Nowe wnioski</div>
+                </div>
+                <div class="mx-stat-box">
+                  <div class="mx-stat-value">24/7</div>
+                  <div class="mx-stat-label">Nadzór procesu</div>
+                </div>
+                <div class="mx-stat-box">
+                  <div class="mx-stat-value">KSRG</div>
+                  <div class="mx-stat-label">Tryb aktywny</div>
+                </div>
+                <div class="mx-stat-box">
+                  <div class="mx-stat-value">PDF</div>
+                  <div class="mx-stat-label">Raportowanie</div>
+                </div>
               </div>
             </section>
           </div>
@@ -109,9 +117,10 @@
       </div>
     </div>
   {% elif is_president %}
-    <div class="wp-admin">
+    <div class="wp-admin panel-page panel-page--president">
       <header class="wp-topbar">
         <div class="wp-topbar-left">
+          <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
           <div class="wp-brand">Remiznet</div>
           <span class="wp-sep">/</span>
           <span class="wp-area">Panel prezesa OSP</span>
@@ -128,10 +137,30 @@
         <section class="wp-content">
           <div class="wp-page-head">
             <div>
-              <h2 class="wp-title">Jednostki OSP</h2>
-              <p class="wp-subtitle">Twoje jednostki i szybkie akcje.</p>
+              <h2 class="wp-title">Dashboard prezesa</h2>
+              <p class="wp-subtitle">Szybki dostęp do zasobów i obiegu zgłoszeń.</p>
             </div>
           </div>
+
+          <div class="mx-tiles">
+            <a class="mx-tile mx-tile--blue" href="{% url 'osp:request_list' %}">
+              <span class="mx-tile-title">Wnioski</span>
+              <span class="mx-tile-value">KSRG</span>
+            </a>
+            <a class="mx-tile mx-tile--green" href="{% url 'osp:firefighter_list' %}">
+              <span class="mx-tile-title">Strażacy</span>
+              <span class="mx-tile-value">Ewidencja</span>
+            </a>
+            <a class="mx-tile mx-tile--yellow" href="{% url 'osp:equipment_list' %}">
+              <span class="mx-tile-title">Sprzęt SiS</span>
+              <span class="mx-tile-value">Gotowość</span>
+            </a>
+            <a class="mx-tile mx-tile--orange" href="{% url 'osp:personnel_list' %}">
+              <span class="mx-tile-title">Siły i środki</span>
+              <span class="mx-tile-value">Obsada</span>
+            </a>
+          </div>
+
           <div class="wp-table-wrap" role="region" aria-label="Jednostki OSP">
             <table class="wp-table">
               <thead>
