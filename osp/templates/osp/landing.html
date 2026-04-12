@@ -2,76 +2,136 @@
 {% load static %}
 {% block title %}Remiznet — Nowoczesny system OSP{% endblock %}
 {% block content %}
-<section class="hero" style="background: linear-gradient(90deg, rgba(15,35,56,0.92) 60%, rgba(200,205,210,0.15)), url('{% static 'osp/img/hero-bg.jpg' %}') center/cover no-repeat; padding: 0; min-height: 520px; display: flex; align-items: flex-start; border-radius: 0 0 2.5rem 2.5rem;">
-  <div class="container" style="width:100%;padding:0;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:2.5rem 2rem 2.5rem 3rem;">
-      <div style="max-width:540px;color:#fff;z-index:2;">
-        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
-          <div style="width:54px;height:54px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-            <!-- LOGO PLACEHOLDER -->
-            <img src="{% static 'osp/img/logo.svg' %}" alt="Remiznet logo" style="width:38px;height:38px;object-fit:contain;"/>
-          </div>
-          <span style="font-size:1.35rem;font-weight:700;letter-spacing:.02em;color:#fff;">Remiznet</span>
+<div class="rn-landing">
+  <section class="rn-hero" aria-labelledby="rn-hero-title">
+    <div class="rn-hero-overlay"></div>
+    <div class="rn-shell rn-hero-content">
+      <div class="rn-hero-copy rn-reveal">
+        <div class="rn-brand">
+          <img src="{% static 'osp/img/logo.svg' %}" alt="Logo Remiznet" class="rn-brand-logo">
+          <span class="rn-brand-name">Remiznet</span>
         </div>
-        <div style="font-size:1.1rem;color:var(--lp-primary-light,#00A8AA);font-weight:600;margin-bottom:0.5rem;">Zmieniamy zarządzanie OSP</div>
-        <h1 style="font-size:2.5rem;font-weight:800;line-height:1.1;margin-bottom:1.2rem;">Nowoczesny system<br>dla Twojej jednostki</h1>
-        <div style="font-size:1.15rem;line-height:1.5;margin-bottom:2rem;max-width:420px;">
-          Zarządzaj wnioskami, członkami i dokumentacją w jednym, bezpiecznym panelu online. Szybko, wygodnie, bez papierów.
-        </div>
-        <div style="display:flex;gap:1rem;align-items:center;">
-          <a href="/login/" class="btn btn-primary" style="font-size:1.1rem;padding:0.8rem 2.2rem;">Zaloguj się</a>
-          <a href="#features" class="btn btn-outline" style="font-size:1.1rem;padding:0.8rem 2.2rem;">Poznaj funkcje</a>
+        <p class="rn-kicker">System dla jednostek OSP</p>
+        <h1 id="rn-hero-title">Dowodzenie dokumentacją i personelem w jednym, bezpiecznym centrum</h1>
+        <p class="rn-lead">Profesjonalna platforma do obsługi wniosków, ewidencji drużyny, raportów i obiegu decyzji. Szybciej, czytelniej i zgodnie z procedurami.</p>
+        <div class="rn-hero-actions">
+          <a href="/login/" class="btn btn-primary rn-btn-main">Przejdź do panelu</a>
+          <a href="#rn-funkcje" class="btn rn-btn-ghost">Poznaj funkcje</a>
         </div>
       </div>
-      <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:320px;">
-        <!-- Optional: place for illustration or video -->
-      </div>
+      <aside class="rn-hero-panel rn-reveal rn-delay-1" aria-label="Najważniejsze przewagi">
+        <h2>Dlaczego dowódcy wybierają Remiznet</h2>
+        <ul>
+          <li>Centralny obieg wniosków i decyzji</li>
+          <li>Pełna historia zmian i audyt czynności</li>
+          <li>Szybki dostęp do danych kadrowych i operacyjnych</li>
+          <li>Standard pracy jednostki pod kontrolą</li>
+        </ul>
+      </aside>
     </div>
-    <div style="display:flex;justify-content:center;gap:2rem;margin-top:-2.5rem;z-index:3;position:relative;">
-      <div style="background:#fff;border-radius:1.2rem;box-shadow:0 4px 24px rgba(15,35,56,0.10);padding:1.5rem 2.5rem;display:flex;gap:2.5rem;align-items:center;">
-        <div style="text-align:center;">
-          <div style="font-size:2rem;color:var(--lp-accent,#CC2630);font-weight:700;">3</div>
-          <div style="font-size:.98rem;color:var(--lp-primary,#0F2338);">Aktywne wnioski</div>
-        </div>
-        <div style="width:1px;height:40px;background:var(--lp-bg,#C8CDD2);"></div>
-        <div style="text-align:center;">
-          <div style="font-size:2rem;color:var(--lp-primary-light,#00A8AA);font-weight:700;">2</div>
-          <div style="font-size:.98rem;color:var(--lp-primary,#0F2338);">Oczekujące decyzje</div>
-        </div>
-        <div style="width:1px;height:40px;background:var(--lp-bg,#C8CDD2);"></div>
-        <div style="text-align:center;">
-          <div style="font-size:2rem;color:var(--lp-primary,#0F2338);font-weight:700;">100%</div>
-          <div style="font-size:.98rem;color:var(--lp-primary,#0F2338);">Historia zmian</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+  </section>
 
-<section class="features" id="features" style="background:#fff;padding:3.5rem 0 2.5rem 0;">
-  <div class="container">
-    <div class="features-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;">
-      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
-        <div style="font-size:2.2rem;color:var(--lp-accent,#CC2630);margin-bottom:0.7rem;">&#128218;</div>
-        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Zarządzanie wnioskami</div>
-        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Składaj, opiniuj i podpisuj wnioski w jednym miejscu.</div>
+  <section class="rn-stats" aria-label="Statystyki">
+    <div class="rn-shell rn-stats-grid">
+      <article class="rn-stat rn-reveal">
+        <p class="rn-stat-value">24/7</p>
+        <p class="rn-stat-label">Dostęp do dokumentacji jednostki</p>
+      </article>
+      <article class="rn-stat rn-reveal rn-delay-1">
+        <p class="rn-stat-value">100%</p>
+        <p class="rn-stat-label">Transparentna historia decyzji</p>
+      </article>
+      <article class="rn-stat rn-reveal rn-delay-2">
+        <p class="rn-stat-value">1 panel</p>
+        <p class="rn-stat-label">Wnioski, kadry i raporty w jednym miejscu</p>
+      </article>
+      <article class="rn-stat rn-reveal rn-delay-3">
+        <p class="rn-stat-value">Szybciej</p>
+        <p class="rn-stat-label">Mniej papieru i mniej operacji ręcznych</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="rn-section rn-benefits" id="rn-korzysci">
+    <div class="rn-shell">
+      <div class="rn-section-head rn-reveal">
+        <p class="rn-kicker">Korzyści</p>
+        <h2>Oficjalny standard pracy bez chaosu informacyjnego</h2>
       </div>
-      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
-        <div style="font-size:2.2rem;color:var(--lp-primary-light,#00A8AA);margin-bottom:0.7rem;">&#128658;</div>
-        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Baza strażaków</div>
-        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Dodawaj i edytuj dane członków jednostki.</div>
-      </div>
-      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
-        <div style="font-size:2.2rem;color:var(--lp-primary,#0F2338);margin-bottom:0.7rem;">&#128202;</div>
-        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Historia i raporty</div>
-        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Pełna historia decyzji i możliwość generowania raportów.</div>
-      </div>
-      <div class="feature" style="background:var(--lp-bg,#C8CDD2);border-radius:1rem;padding:2rem 1.2rem;text-align:center;box-shadow:0 2px 8px rgba(15,35,56,0.04);">
-        <div style="font-size:2.2rem;color:var(--lp-accent,#CC2630);margin-bottom:0.7rem;">&#128161;</div>
-        <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Automatyczne powiadomienia</div>
-        <div style="color:var(--lp-primary,#0F2338);font-size:.98rem;">Bądź na bieżąco z decyzjami i zmianami w systemie.</div>
+      <div class="rn-card-grid rn-card-grid-3">
+        <article class="rn-card rn-reveal">
+          <h3>Jedno źródło prawdy</h3>
+          <p>Wszystkie kluczowe dane i dokumenty jednostki są w jednym systemie, dostępne dla uprawnionych osób.</p>
+        </article>
+        <article class="rn-card rn-reveal rn-delay-1">
+          <h3>Lepsza gotowość operacyjna</h3>
+          <p>Szybki podgląd stanu personalnego i spraw formalnych wspiera decyzje podczas codziennej służby.</p>
+        </article>
+        <article class="rn-card rn-reveal rn-delay-2">
+          <h3>Kontrola i zgodność</h3>
+          <p>Historia zmian, rejestr podpisów i czytelne statusy pomagają utrzymać porządek proceduralny.</p>
+        </article>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+
+  <section class="rn-section rn-system" id="rn-funkcje">
+    <div class="rn-shell">
+      <div class="rn-section-head rn-reveal">
+        <p class="rn-kicker">Funkcje systemu</p>
+        <h2>Kluczowe moduły dla jednostki OSP</h2>
+      </div>
+      <div class="rn-card-grid rn-card-grid-4">
+        <article class="rn-card rn-card-soft rn-reveal">
+          <h3>Wnioski i akceptacje</h3>
+          <p>Składanie, opiniowanie, podpisywanie i archiwizacja spraw bez papierowego obiegu.</p>
+        </article>
+        <article class="rn-card rn-card-soft rn-reveal rn-delay-1">
+          <h3>Ewidencja drużyny</h3>
+          <p>Karta strażaka, dane kontaktowe i statusy gotowe do szybkiego przeglądu.</p>
+        </article>
+        <article class="rn-card rn-card-soft rn-reveal rn-delay-2">
+          <h3>Raporty i zestawienia</h3>
+          <p>Historia operacji i raporty miesięczne pomocne przy sprawozdawczości.</p>
+        </article>
+        <article class="rn-card rn-card-soft rn-reveal rn-delay-3">
+          <h3>Rejestr audytowy</h3>
+          <p>Pełny ślad zmian dla transparentności i bezpieczeństwa danych jednostki.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="rn-section rn-faq" id="rn-faq">
+    <div class="rn-shell">
+      <div class="rn-section-head rn-reveal">
+        <p class="rn-kicker">FAQ</p>
+        <h2>Najczęstsze pytania</h2>
+      </div>
+      <div class="rn-faq-list">
+        <details class="rn-faq-item rn-reveal" open>
+          <summary>Czy system jest odpowiedni dla mniejszych jednostek?</summary>
+          <p>Tak. Interfejs i procesy zostały zaprojektowane tak, aby były czytelne i szybkie niezależnie od wielkości jednostki.</p>
+        </details>
+        <details class="rn-faq-item rn-reveal rn-delay-1">
+          <summary>Czy mogę sprawdzić historię zmian dokumentu?</summary>
+          <p>Tak. Każda istotna operacja jest zapisywana, dzięki czemu łatwo odtworzyć przebieg decyzji i akceptacji.</p>
+        </details>
+        <details class="rn-faq-item rn-reveal rn-delay-2">
+          <summary>Czy wdrożenie wymaga zmiany obecnych procedur?</summary>
+          <p>Nie. Remiznet wspiera obecny sposób pracy i porządkuje go, bez konieczności rewolucji organizacyjnej.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="rn-final-cta" aria-label="Wezwanie do działania">
+    <div class="rn-shell rn-final-cta-inner rn-reveal">
+      <p class="rn-kicker">Gotowi na kolejny krok</p>
+      <h2>Wzmocnij zarządzanie jednostką i przejdź na standard cyfrowy</h2>
+      <p>Uruchom panel i zobacz, jak uporządkować codzienną pracę OSP bez utraty kontroli nad dokumentacją.</p>
+      <a href="/login/" class="btn btn-primary rn-btn-main">Zaloguj się do Remiznet</a>
+    </div>
+  </section>
+</div>
 {% endblock %}
