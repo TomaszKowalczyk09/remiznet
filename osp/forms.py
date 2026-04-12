@@ -1,5 +1,13 @@
 from django import forms
-from .models import Equipment, Firefighter, PersonnelResource, Request, RequestResponse
+from .models import (
+    Equipment,
+    Firefighter,
+    PersonnelResource,
+    Request,
+    RequestResponse,
+    RescueMessage,
+    RescueOperation,
+)
 
 
 class SignRequestForm(forms.Form):
@@ -145,3 +153,63 @@ class PersonnelResourceForm(forms.ModelForm):
             self.fields['firefighter'].queryset = Firefighter.objects.filter(unit=unit).order_by('last_name', 'first_name')
         else:
             self.fields['firefighter'].queryset = Firefighter.objects.none()
+
+
+class RescueOperationForm(forms.ModelForm):
+    class Meta:
+        model = RescueOperation
+        fields = ['title', 'incident_type', 'location', 'description', 'priority', 'occurred_at']
+        labels = {
+            'title': 'Tytuł działania',
+            'incident_type': 'Typ zdarzenia',
+            'location': 'Lokalizacja',
+            'description': 'Opis operacyjny',
+            'priority': 'Priorytet',
+            'occurred_at': 'Data i czas zgłoszenia',
+        }
+        widgets = {
+            'occurred_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+
+class RescueMessageForm(forms.ModelForm):
+    class Meta:
+        model = RescueMessage
+        fields = ['kind', 'message']
+        labels = {
+            'kind': 'Typ meldunku',
+            'message': 'Treść meldunku',
+        }
+
+
+class RescueStatusForm(forms.Form):
+    status = forms.ChoiceField(
+        choices=[
+            (RescueOperation.STATUS_REGISTERED, 'Zarejestrowane'),
+            (RescueOperation.STATUS_IN_PROGRESS, 'W trakcie'),
+        ],
+        label='Nowy status',
+    )
+    action_started_at = forms.DateTimeField(
+        required=False,
+        label='Czas rozpoczęcia działań',
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+    )
+
+
+class RescueFinalReportForm(forms.ModelForm):
+    class Meta:
+        model = RescueOperation
+        fields = ['final_report', 'closed_at']
+        labels = {
+            'final_report': 'Raport końcowy',
+            'closed_at': 'Data i czas zakończenia',
+        }
+        widgets = {
+            'final_report': forms.Textarea(attrs={'rows': 5}),
+            'closed_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+
+class RescueArchiveForm(forms.Form):
+    confirm = forms.BooleanField(label='Potwierdzam archiwizację działania', required=True)

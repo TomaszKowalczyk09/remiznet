@@ -1,0 +1,93 @@
+{% extends 'osp/base.html' %}
+{% block title %}Raport miesięczny działań{% endblock %}
+{% block content %}
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Raport miesięczny działań</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    {% include 'osp/_sidebar.html' with sidebar_active='operations' %}
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">Raport miesięczny {{ year }}-{{ month }}</h2>
+          <p class="wp-subtitle">Zbiorcze dane operacyjne i czasy reakcji.</p>
+        </div>
+        <div class="wp-actions">
+          <a class="wp-btn" href="{% url 'osp:rescue_monthly_report_csv' %}?year={{ year }}&month={{ month }}">Eksport CSV</a>
+          <a class="wp-btn" href="{% url 'osp:rescue_monthly_report_pdf' %}?year={{ year }}&month={{ month }}">Eksport PDF</a>
+          <a class="wp-btn" href="{% url 'osp:rescue_operation_list' %}">Powrót</a>
+        </div>
+      </div>
+
+      <section class="wp-card">
+        <div class="mx-stat-grid">
+          <div class="mx-stat-box"><div class="mx-stat-value">{{ stats.total }}</div><div class="mx-stat-label">Wszystkie działania</div></div>
+          <div class="mx-stat-box"><div class="mx-stat-value">{{ stats.registered }}</div><div class="mx-stat-label">Zarejestrowane</div></div>
+          <div class="mx-stat-box"><div class="mx-stat-value">{{ stats.in_progress }}</div><div class="mx-stat-label">W trakcie</div></div>
+          <div class="mx-stat-box"><div class="mx-stat-value">{{ stats.closed }}</div><div class="mx-stat-label">Zamknięte</div></div>
+          <div class="mx-stat-box"><div class="mx-stat-value">{{ stats.archived }}</div><div class="mx-stat-label">Zarchiwizowane</div></div>
+          <div class="mx-stat-box"><div class="mx-stat-value">{{ stats.avg_reaction_minutes|default:'-' }}</div><div class="mx-stat-label">Śr. czas reakcji (min)</div></div>
+          <div class="mx-stat-box"><div class="mx-stat-value">{{ stats.avg_close_minutes|default:'-' }}</div><div class="mx-stat-label">Śr. czas zamknięcia (min)</div></div>
+        </div>
+      </section>
+
+      <section class="wp-card" style="margin-top: 1rem;">
+        <header class="wp-card-head"><h3>Działania w miesiącu</h3></header>
+        <div class="wp-table-wrap" role="region" aria-label="Działania w miesiącu">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tytuł</th>
+                <th>Jednostka</th>
+                <th>Status</th>
+                <th>Priorytet</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for op in operations %}
+                <tr>
+                  <td>{{ op.pk }}</td>
+                  <td class="wp-td-strong">{{ op.title }}</td>
+                  <td>{{ op.unit }}</td>
+                  <td>{{ op.get_status_display }}</td>
+                  <td>{{ op.get_priority_display }}</td>
+                  <td class="wp-td-right"><a class="wp-btn" href="{% url 'osp:rescue_operation_detail' op.pk %}">Szczegóły</a></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6">Brak działań dla wskazanego miesiąca.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const sidebar = document.querySelector('.wp-sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+
+    if (sidebar && toggle) {
+      toggle.addEventListener('click', function () {
+        sidebar.classList.toggle('active');
+      });
+    }
+  });
+</script>
+{% endblock %}

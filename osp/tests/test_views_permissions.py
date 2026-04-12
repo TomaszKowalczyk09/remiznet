@@ -1,7 +1,8 @@
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from osp.models import Equipment, Firefighter, PersonnelResource, Request, RequestResponse, Unit
+from django.utils import timezone
+from osp.models import Equipment, Firefighter, PersonnelResource, Request, RequestResponse, RescueOperation, Unit
 from django.contrib.auth.models import Group
 
 User = get_user_model()
@@ -161,3 +162,97 @@ class OspViewsTest(TestCase):
             {'name': 'Agregat', 'inventory_number': 'EQ-999'},
         )
         self.assertEqual(resp.status_code, 403)
+
+    def test_president_can_register_rescue_operation(self):
+        self.client.login(username='pres', password='pass')
+        resp = self.client.post(
+            reverse('osp:rescue_operation_create', args=[self.unit.pk]),
+            {
+                'title': 'Pożar hali',
+                'incident_type': 'Pożar',
+                'location': 'Magazyn A',
+                'description': 'Silne zadymienie obiektu.',
+                'priority': RescueOperation.PRIORITY_HIGH,
+                'occurred_at': '2026-04-03T10:00',
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        operation = RescueOperation.objects.first()
+        self.assertIsNotNone(operation)
+        self.assertEqual(operation.status, RescueOperation.STATUS_REGISTERED)
+
+    def test_official_can_post_psp_message_and_update_status(self):
+        operation = RescueOperation.objects.create(
+            unit=self.unit,
+            created_by=self.president,
+            title='Wypadek drogowy',
+            incident_type='Wypadek',
+            location='DK-7',
+            description='Kolizja dwóch pojazdów.',
+            occurred_at=timezone.now(),
+        )
+
+        self.client.login(username='off', password='pass')
+        msg_resp = self.client.post(
+            reverse('osp:rescue_operation_add_message', args=[operation.pk]),
+            {'kind': 'STATUS', 'message': 'PSP na miejscu, rozpoczynamy zabezpieczenie.'},
+        )
+        self.assertEqual(msg_resp.status_code, 302)
+
+        status_resp = self.client.post(
+            reverse('osp:rescue_operation_update_status', args=[operation.pk]),
+            {'status': RescueOperation.STATUS_IN_PROGRESS, 'action_started_at': '2026-04-03T10:10'},
+        )
+        self.assertEqual(status_resp.status_code, 302)
+
+        operation.refresh_from_db()
+        self.assertEqual(operation.status, RescueOperation.STATUS_IN_PROGRESS)
+        self.assertEqual(operation.messages.count(), 1)
+        self.assertEqual(operation.messages.first().sender_type, 'PSP')
+
+    def test_full_rescue_flow_finalize_and_archive(self):
+        operation = RescueOperation.objects.create(
+            unit=self.unit,
+            created_by=self.president,
+            title='Podtopienie posesji',
+            incident_type='Miejscowe zagrożenie',
+            location='OSP Test 12',
+            description='Wypompowanie wody.',
+            occurred_at=timezone.now(),
+            status=RescueOperation.STATUS_IN_PROGRESS,
+        )
+
+        self.client.login(username='off', password='pass')
+        finalize_resp = self.client.post(
+            reverse('osp:rescue_operation_finalize', args=[operation.pk]),
+            {'final_report': 'Działania zakończone, miejsce przekazano właścicielowi.', 'closed_at': '2026-04-03T11:30'},
+        )
+        self.assertEqual(finalize_resp.status_code, 302)
+
+        archive_resp = self.client.post(
+            reverse('osp:rescue_operation_archive', args=[operation.pk]),
+            {'confirm': True},
+        )
+        self.assertEqual(archive_resp.status_code, 302)
+
+        operation.refresh_from_db()
+        self.assertEqual(operation.status, RescueOperation.STATUS_ARCHIVED)
+        self.assertIsNotNone(operation.archived_at)
+
+    def test_rescue_reports_require_authorization(self):
+        operation = RescueOperation.objects.create(
+            unit=self.unit,
+            created_by=self.president,
+            title='Pożar traw',
+            incident_type='Pożar',
+            location='Łąki',
+            description='Pożar nieużytków.',
+            occurred_at=timezone.now(),
+        )
+
+        self.client.login(username='other', password='pass')
+        pdf_resp = self.client.get(reverse('osp:rescue_operation_report_pdf', args=[operation.pk]))
+        csv_resp = self.client.get(reverse('osp:rescue_operation_report_csv', args=[operation.pk]))
+
+        self.assertEqual(pdf_resp.status_code, 403)
+        self.assertEqual(csv_resp.status_code, 403)

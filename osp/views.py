@@ -1,3 +1,5 @@
+import csv
+
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -12,11 +14,27 @@ from .forms import (
     EquipmentForm,
     FirefighterForm,
     PersonnelResourceForm,
+    RescueArchiveForm,
+    RescueFinalReportForm,
+    RescueMessageForm,
+    RescueOperationForm,
+    RescueStatusForm,
     RequestForm,
     ResponseForm,
     SignRequestForm,
 )
-from .models import Equipment, Firefighter, PersonnelResource, Request, RequestResponse, SisAuditLog, Unit
+from .models import (
+    Equipment,
+    Firefighter,
+    PersonnelResource,
+    Request,
+    RequestResponse,
+    RescueAuditLog,
+    RescueMessage,
+    RescueOperation,
+    SisAuditLog,
+    Unit,
+)
 
 
 def index(request):
@@ -51,6 +69,22 @@ def log_sis_event(unit, actor, event_type, message, req=None):
         event_type=event_type,
         message=message,
         request=req,
+    )
+
+
+def can_access_rescue_operation(user, operation):
+    if is_official(user):
+        return True
+    return is_president(user) and operation.created_by == user
+
+
+def log_rescue_event(operation, actor, event_type, message):
+    RescueAuditLog.objects.create(
+        unit=operation.unit,
+        operation=operation,
+        actor=actor,
+        event_type=event_type,
+        message=message,
     )
 
 
@@ -497,6 +531,424 @@ def request_respond(request, pk):
     else:
         form = ResponseForm()
     return render(request, 'osp/request_respond.html', {'form': form, 'request_obj': req})
+
+
+@login_required
+def rescue_operation_list(request):
+    if is_official(request.user):
+        operations = RescueOperation.objects.select_related('unit', 'created_by').order_by('-updated_at')
+    elif is_president(request.user):
+        operations = RescueOperation.objects.select_related('unit', 'created_by').filter(created_by=request.user).order_by('-updated_at')
+    else:
+        return HttpResponseForbidden('Brak uprawnień')
+
+    return render(request, 'osp/rescue_operation_list.html', {'operations': operations})
+
+
+@login_required
+def rescue_operation_create(request, unit_pk):
+    unit = get_object_or_404(Unit, pk=unit_pk)
+    if not is_president(request.user):
+        return HttpResponseForbidden('Tylko prezes może zarejestrować działanie ratownicze')
+
+    if request.method == 'POST':
+        form = RescueOperationForm(request.POST)
+        if form.is_valid():
+            operation = form.save(commit=False)
+            operation.unit = unit
+            operation.created_by = request.user
+            operation.status = RescueOperation.STATUS_REGISTERED
+            operation.save()
+            log_rescue_event(
+                operation=operation,
+                actor=request.user,
+                event_type=RescueAuditLog.EVENT_FLOW,
+                message='Zarejestrowano działanie ratownicze.',
+            )
+            return redirect('osp:rescue_operation_detail', pk=operation.pk)
+    else:
+        form = RescueOperationForm()
+
+    return render(request, 'osp/rescue_operation_form.html', {'form': form, 'unit': unit})
+
+
+@login_required
+def rescue_operation_detail(request, pk):
+    operation = get_object_or_404(
+        RescueOperation.objects.select_related('unit', 'created_by', 'archived_by').prefetch_related('messages__author', 'audit_logs'),
+        pk=pk,
+    )
+    if not can_access_rescue_operation(request.user, operation):
+        return HttpResponseForbidden('Brak uprawnień do podglądu działania')
+
+    can_manage = is_official(request.user)
+    context = {
+        'operation': operation,
+        'messages': operation.messages.all(),
+        'audit_logs': operation.audit_logs.all()[:20],
+        'can_manage': can_manage,
+        'can_archive': is_official(request.user) and operation.status == RescueOperation.STATUS_CLOSED and operation.archived_at is None,
+        'message_form': RescueMessageForm(),
+        'status_form': RescueStatusForm(initial={'status': operation.status, 'action_started_at': operation.action_started_at}),
+        'final_report_form': RescueFinalReportForm(instance=operation),
+        'archive_form': RescueArchiveForm(),
+    }
+    return render(request, 'osp/rescue_operation_detail.html', context)
+
+
+@login_required
+def rescue_operation_add_message(request, pk):
+    operation = get_object_or_404(RescueOperation, pk=pk)
+    if not can_access_rescue_operation(request.user, operation):
+        return HttpResponseForbidden('Brak uprawnień do dodawania meldunków')
+    if request.method != 'POST':
+        return HttpResponseBadRequest('Nieprawidłowa metoda')
+
+    form = RescueMessageForm(request.POST)
+    if form.is_valid():
+        rescue_message = form.save(commit=False)
+        rescue_message.operation = operation
+        rescue_message.author = request.user
+        rescue_message.sender_type = RescueMessage.SENDER_PSP if is_official(request.user) else RescueMessage.SENDER_OSP
+        rescue_message.save()
+        log_rescue_event(
+            operation=operation,
+            actor=request.user,
+            event_type=RescueAuditLog.EVENT_FLOW,
+            message=f'Dodano meldunek ({rescue_message.get_kind_display()}) po stronie {rescue_message.sender_type}.',
+        )
+    return redirect('osp:rescue_operation_detail', pk=pk)
+
+
+@login_required
+def rescue_operation_update_status(request, pk):
+    operation = get_object_or_404(RescueOperation, pk=pk)
+    if not is_official(request.user):
+        return HttpResponseForbidden('Status może zmieniać wyłącznie urzędnik')
+    if operation.status in [RescueOperation.STATUS_CLOSED, RescueOperation.STATUS_ARCHIVED]:
+        return HttpResponseBadRequest('Działanie jest już zamknięte lub zarchiwizowane')
+    if request.method != 'POST':
+        return HttpResponseBadRequest('Nieprawidłowa metoda')
+
+    form = RescueStatusForm(request.POST)
+    if form.is_valid():
+        operation.status = form.cleaned_data['status']
+        action_started_at = form.cleaned_data['action_started_at']
+        if action_started_at:
+            operation.action_started_at = action_started_at
+        operation.save(update_fields=['status', 'action_started_at', 'updated_at'])
+        log_rescue_event(
+            operation=operation,
+            actor=request.user,
+            event_type=RescueAuditLog.EVENT_FLOW,
+            message=f'Zmieniono status działania na: {operation.get_status_display()}.',
+        )
+    return redirect('osp:rescue_operation_detail', pk=pk)
+
+
+@login_required
+def rescue_operation_finalize(request, pk):
+    operation = get_object_or_404(RescueOperation, pk=pk)
+    if not is_official(request.user):
+        return HttpResponseForbidden('Raport końcowy może zatwierdzić wyłącznie urzędnik')
+    if operation.status == RescueOperation.STATUS_ARCHIVED:
+        return HttpResponseBadRequest('Zarchiwizowane działanie nie może zostać ponownie zamknięte')
+    if request.method != 'POST':
+        return HttpResponseBadRequest('Nieprawidłowa metoda')
+
+    form = RescueFinalReportForm(request.POST, instance=operation)
+    if form.is_valid():
+        operation = form.save(commit=False)
+        operation.status = RescueOperation.STATUS_CLOSED
+        if not operation.closed_at:
+            operation.closed_at = timezone.now()
+        operation.save(update_fields=['final_report', 'closed_at', 'status', 'updated_at'])
+        log_rescue_event(
+            operation=operation,
+            actor=request.user,
+            event_type=RescueAuditLog.EVENT_FLOW,
+            message='Zamknięto działanie i zatwierdzono raport końcowy.',
+        )
+    return redirect('osp:rescue_operation_detail', pk=pk)
+
+
+@login_required
+def rescue_operation_archive(request, pk):
+    operation = get_object_or_404(RescueOperation, pk=pk)
+    if not is_official(request.user):
+        return HttpResponseForbidden('Tylko urzędnik może archiwizować działania')
+    if operation.status != RescueOperation.STATUS_CLOSED:
+        return HttpResponseBadRequest('Archiwizować można tylko działanie zamknięte raportem końcowym')
+    if request.method != 'POST':
+        return HttpResponseBadRequest('Nieprawidłowa metoda')
+
+    form = RescueArchiveForm(request.POST)
+    if form.is_valid():
+        operation.status = RescueOperation.STATUS_ARCHIVED
+        operation.archived_by = request.user
+        operation.archived_at = timezone.now()
+        operation.save(update_fields=['status', 'archived_by', 'archived_at', 'updated_at'])
+        log_rescue_event(
+            operation=operation,
+            actor=request.user,
+            event_type=RescueAuditLog.EVENT_FLOW,
+            message='Zarchiwizowano działanie ratownicze.',
+        )
+    return redirect('osp:rescue_operation_detail', pk=pk)
+
+
+@login_required
+def rescue_operation_report_csv(request, pk):
+    operation = get_object_or_404(RescueOperation.objects.select_related('unit', 'created_by'), pk=pk)
+    if not can_access_rescue_operation(request.user, operation):
+        return HttpResponseForbidden('Brak uprawnień do raportu')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="dzialanie-{operation.pk}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['ID', operation.pk])
+    writer.writerow(['Tytuł', operation.title])
+    writer.writerow(['Jednostka', operation.unit.name])
+    writer.writerow(['Typ zdarzenia', operation.incident_type])
+    writer.writerow(['Lokalizacja', operation.location])
+    writer.writerow(['Priorytet', operation.get_priority_display()])
+    writer.writerow(['Status', operation.get_status_display()])
+    writer.writerow(['Data zgłoszenia', operation.occurred_at.strftime('%Y-%m-%d %H:%M')])
+    writer.writerow(['Start działań', operation.action_started_at.strftime('%Y-%m-%d %H:%M') if operation.action_started_at else '-'])
+    writer.writerow(['Zakończenie', operation.closed_at.strftime('%Y-%m-%d %H:%M') if operation.closed_at else '-'])
+    writer.writerow([])
+    writer.writerow(['Raport końcowy'])
+    writer.writerow([operation.final_report or '-'])
+    writer.writerow([])
+    writer.writerow(['Meldunki'])
+    writer.writerow(['Data', 'Nadawca', 'Typ', 'Autor', 'Treść'])
+    for msg in operation.messages.select_related('author').all():
+        writer.writerow([
+            msg.created_at.strftime('%Y-%m-%d %H:%M'),
+            msg.get_sender_type_display(),
+            msg.get_kind_display(),
+            str(msg.author or '-'),
+            msg.message,
+        ])
+
+    log_rescue_event(
+        operation=operation,
+        actor=request.user,
+        event_type=RescueAuditLog.EVENT_REPORTING,
+        message='Wygenerowano raport operacyjny CSV.',
+    )
+    return response
+
+
+@login_required
+def rescue_operation_report_pdf(request, pk):
+    operation = get_object_or_404(RescueOperation.objects.select_related('unit', 'created_by'), pk=pk)
+    if not can_access_rescue_operation(request.user, operation):
+        return HttpResponseForbidden('Brak uprawnień do raportu')
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="dzialanie-{operation.pk}.pdf"'
+    pdf = canvas.Canvas(response, pagesize=A4)
+    _, page_height = A4
+    text = pdf.beginText(40, page_height - 50)
+    text.setFont('Helvetica-Bold', 14)
+    text.textLine('Raport operacyjny działania ratowniczego')
+    text.setFont('Helvetica', 10)
+    text.textLine('')
+
+    lines = [
+        f'ID: {operation.pk}',
+        f'Tytuł: {operation.title}',
+        f'Jednostka: {operation.unit.name}',
+        f'Typ zdarzenia: {operation.incident_type}',
+        f'Lokalizacja: {operation.location}',
+        f'Priorytet: {operation.get_priority_display()}',
+        f'Status: {operation.get_status_display()}',
+        f'Data zgłoszenia: {operation.occurred_at.strftime("%Y-%m-%d %H:%M")}',
+        f'Start działań: {operation.action_started_at.strftime("%Y-%m-%d %H:%M") if operation.action_started_at else "-"}',
+        f'Zakończenie: {operation.closed_at.strftime("%Y-%m-%d %H:%M") if operation.closed_at else "-"}',
+        '',
+        'Opis:',
+    ]
+    for line in lines:
+        text.textLine(line)
+
+    for raw_line in (operation.description.splitlines() or ['-']):
+        current_line = raw_line
+        while len(current_line) > 110:
+            text.textLine(current_line[:110])
+            current_line = current_line[110:]
+        text.textLine(current_line)
+
+    text.textLine('')
+    text.textLine('Raport końcowy:')
+    for raw_line in (operation.final_report.splitlines() or ['-']):
+        current_line = raw_line
+        while len(current_line) > 110:
+            text.textLine(current_line[:110])
+            current_line = current_line[110:]
+        text.textLine(current_line)
+
+    text.textLine('')
+    text.textLine('Meldunki OSP/PSP:')
+    messages = operation.messages.select_related('author').all()
+    if messages.exists():
+        for msg in messages:
+            line = f'- {msg.created_at.strftime("%Y-%m-%d %H:%M")} | {msg.sender_type} | {msg.get_kind_display()} | {msg.author or "-"}'
+            text.textLine(line[:115])
+            message_text = msg.message
+            while len(message_text) > 108:
+                text.textLine(f'  {message_text[:108]}')
+                message_text = message_text[108:]
+            text.textLine(f'  {message_text}')
+    else:
+        text.textLine('- Brak meldunków')
+
+    pdf.drawText(text)
+    pdf.showPage()
+    pdf.save()
+
+    log_rescue_event(
+        operation=operation,
+        actor=request.user,
+        event_type=RescueAuditLog.EVENT_REPORTING,
+        message='Wygenerowano raport operacyjny PDF.',
+    )
+    return response
+
+
+def _monthly_rescue_queryset(user, year, month):
+    start = timezone.datetime(year=year, month=month, day=1, tzinfo=timezone.get_current_timezone())
+    if month == 12:
+        end = timezone.datetime(year=year + 1, month=1, day=1, tzinfo=timezone.get_current_timezone())
+    else:
+        end = timezone.datetime(year=year, month=month + 1, day=1, tzinfo=timezone.get_current_timezone())
+
+    queryset = RescueOperation.objects.select_related('unit', 'created_by').filter(created_at__gte=start, created_at__lt=end)
+    if is_official(user):
+        return queryset
+    if is_president(user):
+        return queryset.filter(created_by=user)
+    return RescueOperation.objects.none()
+
+
+def _durations_minutes(operation):
+    reaction_minutes = None
+    close_minutes = None
+    if operation.action_started_at:
+        reaction_minutes = int((operation.action_started_at - operation.occurred_at).total_seconds() // 60)
+    if operation.closed_at:
+        close_minutes = int((operation.closed_at - operation.occurred_at).total_seconds() // 60)
+    return reaction_minutes, close_minutes
+
+
+@login_required
+def rescue_monthly_report(request):
+    if not (is_official(request.user) or is_president(request.user)):
+        return HttpResponseForbidden('Brak uprawnień')
+
+    now = timezone.localtime()
+    year = int(request.GET.get('year', now.year))
+    month = int(request.GET.get('month', now.month))
+    operations = list(_monthly_rescue_queryset(request.user, year, month).order_by('-created_at'))
+
+    reaction_values = []
+    close_values = []
+    for operation in operations:
+        reaction_minutes, close_minutes = _durations_minutes(operation)
+        if reaction_minutes is not None:
+            reaction_values.append(reaction_minutes)
+        if close_minutes is not None:
+            close_values.append(close_minutes)
+
+    stats = {
+        'total': len(operations),
+        'registered': sum(1 for op in operations if op.status == RescueOperation.STATUS_REGISTERED),
+        'in_progress': sum(1 for op in operations if op.status == RescueOperation.STATUS_IN_PROGRESS),
+        'closed': sum(1 for op in operations if op.status == RescueOperation.STATUS_CLOSED),
+        'archived': sum(1 for op in operations if op.status == RescueOperation.STATUS_ARCHIVED),
+        'avg_reaction_minutes': int(sum(reaction_values) / len(reaction_values)) if reaction_values else None,
+        'avg_close_minutes': int(sum(close_values) / len(close_values)) if close_values else None,
+    }
+
+    return render(
+        request,
+        'osp/rescue_monthly_report.html',
+        {
+            'operations': operations,
+            'year': year,
+            'month': month,
+            'stats': stats,
+        },
+    )
+
+
+@login_required
+def rescue_monthly_report_csv(request):
+    if not (is_official(request.user) or is_president(request.user)):
+        return HttpResponseForbidden('Brak uprawnień')
+
+    now = timezone.localtime()
+    year = int(request.GET.get('year', now.year))
+    month = int(request.GET.get('month', now.month))
+    operations = _monthly_rescue_queryset(request.user, year, month).order_by('-created_at')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="raport-miesieczny-{year}-{month:02d}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Raport miesięczny działań ratowniczych', f'{year}-{month:02d}'])
+    writer.writerow([])
+    writer.writerow(['ID', 'Tytuł', 'Jednostka', 'Status', 'Priorytet', 'Data zgłoszenia', 'Czas reakcji (min)', 'Czas zamknięcia (min)'])
+    for operation in operations:
+        reaction_minutes, close_minutes = _durations_minutes(operation)
+        writer.writerow([
+            operation.pk,
+            operation.title,
+            operation.unit.name,
+            operation.get_status_display(),
+            operation.get_priority_display(),
+            operation.occurred_at.strftime('%Y-%m-%d %H:%M'),
+            reaction_minutes if reaction_minutes is not None else '-',
+            close_minutes if close_minutes is not None else '-',
+        ])
+    return response
+
+
+@login_required
+def rescue_monthly_report_pdf(request):
+    if not (is_official(request.user) or is_president(request.user)):
+        return HttpResponseForbidden('Brak uprawnień')
+
+    now = timezone.localtime()
+    year = int(request.GET.get('year', now.year))
+    month = int(request.GET.get('month', now.month))
+    operations = _monthly_rescue_queryset(request.user, year, month).order_by('-created_at')
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="raport-miesieczny-{year}-{month:02d}.pdf"'
+
+    pdf = canvas.Canvas(response, pagesize=A4)
+    _, page_height = A4
+    text = pdf.beginText(40, page_height - 50)
+    text.setFont('Helvetica-Bold', 14)
+    text.textLine(f'Raport miesięczny działań ratowniczych: {year}-{month:02d}')
+    text.setFont('Helvetica', 10)
+    text.textLine('')
+    text.textLine(f'Liczba działań: {operations.count()}')
+    text.textLine('')
+    text.textLine('Lista działań:')
+    for operation in operations[:70]:
+        text.textLine(
+            f'- #{operation.pk} | {operation.occurred_at.strftime("%Y-%m-%d %H:%M")} | '
+            f'{operation.get_status_display()} | {operation.title[:50]}'
+        )
+    if operations.count() > 70:
+        text.textLine('... (lista skrócona)')
+
+    pdf.drawText(text)
+    pdf.showPage()
+    pdf.save()
+    return response
 
 
 @login_required

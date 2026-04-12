@@ -40,9 +40,9 @@
               <span class="mx-tile-title">Wnioski</span>
               <span class="mx-tile-value">Przegląd</span>
             </a>
-            <a class="mx-tile mx-tile--yellow" href="{% url 'osp:request_list' %}">
-              <span class="mx-tile-title">Workflow KSRG</span>
-              <span class="mx-tile-value">Decyzje</span>
+            <a class="mx-tile mx-tile--yellow" href="{% url 'osp:rescue_operation_list' %}">
+              <span class="mx-tile-title">Działania ratownicze</span>
+              <span class="mx-tile-value">OSP/PSP</span>
             </a>
             <a class="mx-tile mx-tile--orange" href="/admin/">
               <span class="mx-tile-title">Panel administracyjny</span>
@@ -159,6 +159,10 @@
               <span class="mx-tile-title">Siły i środki</span>
               <span class="mx-tile-value">Obsada</span>
             </a>
+            <a class="mx-tile mx-tile--blue" href="{% url 'osp:rescue_operation_list' %}">
+              <span class="mx-tile-title">Działania ratownicze</span>
+              <span class="mx-tile-value">Raporty</span>
+            </a>
           </div>
 
           <div class="wp-table-wrap" role="region" aria-label="Jednostki OSP">
@@ -181,6 +185,7 @@
                       <a class="wp-btn" href="{% url 'osp:equipment_list_unit' unit.pk %}">Sprzęt SiS</a>
                       <a class="wp-btn" href="{% url 'osp:personnel_add' unit.pk %}">Dodaj siły/środki</a>
                       <a class="wp-btn" href="{% url 'osp:personnel_list_unit' unit.pk %}">Siły/środki</a>
+                      <a class="wp-btn" href="{% url 'osp:rescue_operation_create' unit.pk %}">Nowe działanie</a>
                     </td>
                   </tr>
                 {% empty %}

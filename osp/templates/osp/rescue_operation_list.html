@@ -1,0 +1,80 @@
+{% extends 'osp/base.html' %}
+{% block title %}Działania ratownicze{% endblock %}
+{% block content %}
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Działania ratownicze</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    {% include 'osp/_sidebar.html' with sidebar_active='operations' %}
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">Rejestr działań ratowniczych</h2>
+          <p class="wp-subtitle">Wymiana informacji OSP/PSP i bieżące statusy operacyjne.</p>
+        </div>
+        <div class="wp-actions">
+          <a class="wp-btn" href="{% url 'osp:rescue_monthly_report' %}">Raport miesięczny</a>
+        </div>
+      </div>
+
+      <div class="wp-table-wrap" role="region" aria-label="Lista działań ratowniczych">
+        <table class="wp-table">
+          <thead>
+            <tr>
+              <th>Tytuł</th>
+              <th>Jednostka</th>
+              <th>Typ</th>
+              <th>Status</th>
+              <th>Priorytet</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for op in operations %}
+              <tr>
+                <td class="wp-td-strong">
+                  <a class="wp-link" href="{% url 'osp:rescue_operation_detail' op.pk %}">{{ op.title }}</a>
+                </td>
+                <td>{{ op.unit }}</td>
+                <td>{{ op.incident_type }}</td>
+                <td>{{ op.get_status_display }}</td>
+                <td>{{ op.get_priority_display }}</td>
+                <td class="wp-td-right">
+                  <a class="wp-btn" href="{% url 'osp:rescue_operation_detail' op.pk %}">Otwórz</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6">Brak działań ratowniczych.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const sidebar = document.querySelector('.wp-sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+
+    if (sidebar && toggle) {
+      toggle.addEventListener('click', function () {
+        sidebar.classList.toggle('active');
+      });
+    }
+  });
+</script>
+{% endblock %}

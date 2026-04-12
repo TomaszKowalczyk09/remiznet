@@ -188,3 +188,111 @@ class SisAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.get_event_type_display()} - {self.unit} ({self.created_at:%Y-%m-%d %H:%M})"
+
+
+class RescueOperation(models.Model):
+    STATUS_REGISTERED = 'REGISTERED'
+    STATUS_IN_PROGRESS = 'IN_PROGRESS'
+    STATUS_CLOSED = 'CLOSED'
+    STATUS_ARCHIVED = 'ARCHIVED'
+
+    STATUS_CHOICES = [
+        (STATUS_REGISTERED, 'Zarejestrowane'),
+        (STATUS_IN_PROGRESS, 'W trakcie'),
+        (STATUS_CLOSED, 'Zamknięte'),
+        (STATUS_ARCHIVED, 'Zarchiwizowane'),
+    ]
+
+    PRIORITY_LOW = 'LOW'
+    PRIORITY_MEDIUM = 'MEDIUM'
+    PRIORITY_HIGH = 'HIGH'
+    PRIORITY_CRITICAL = 'CRITICAL'
+
+    PRIORITY_CHOICES = [
+        (PRIORITY_LOW, 'Niski'),
+        (PRIORITY_MEDIUM, 'Średni'),
+        (PRIORITY_HIGH, 'Wysoki'),
+        (PRIORITY_CRITICAL, 'Krytyczny'),
+    ]
+
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='rescue_operations')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_rescue_operations')
+    title = models.CharField(max_length=250)
+    incident_type = models.CharField(max_length=120)
+    location = models.CharField(max_length=250)
+    description = models.TextField()
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_REGISTERED)
+    occurred_at = models.DateTimeField()
+    action_started_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    final_report = models.TextField(blank=True)
+    archived_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='archived_rescue_operations',
+    )
+    archived_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.unit})"
+
+
+class RescueMessage(models.Model):
+    SENDER_OSP = 'OSP'
+    SENDER_PSP = 'PSP'
+
+    SENDER_CHOICES = [
+        (SENDER_OSP, 'OSP'),
+        (SENDER_PSP, 'PSP'),
+    ]
+
+    KIND_INFO = 'INFO'
+    KIND_STATUS = 'STATUS'
+    KIND_DECISION = 'DECISION'
+
+    KIND_CHOICES = [
+        (KIND_INFO, 'Informacja'),
+        (KIND_STATUS, 'Status operacyjny'),
+        (KIND_DECISION, 'Decyzja/ustalenie'),
+    ]
+
+    operation = models.ForeignKey(RescueOperation, on_delete=models.CASCADE, related_name='messages')
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    sender_type = models.CharField(max_length=10, choices=SENDER_CHOICES)
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, default=KIND_INFO)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.get_sender_type_display()} - {self.operation_id} ({self.created_at:%Y-%m-%d %H:%M})"
+
+
+class RescueAuditLog(models.Model):
+    EVENT_FLOW = 'FLOW'
+    EVENT_REPORTING = 'REPORTING'
+
+    EVENT_CHOICES = [
+        (EVENT_FLOW, 'Obieg działań ratowniczych'),
+        (EVENT_REPORTING, 'Raportowanie działań ratowniczych'),
+    ]
+
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='rescue_audit_logs')
+    operation = models.ForeignKey(RescueOperation, on_delete=models.CASCADE, related_name='audit_logs')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} - {self.operation_id}"

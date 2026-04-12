@@ -1,0 +1,146 @@
+{% extends 'osp/base.html' %}
+{% block title %}Szczegóły działania{% endblock %}
+{% block content %}
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Szczegóły działania</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    {% include 'osp/_sidebar.html' with sidebar_active='operations' %}
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">{{ operation.title }}</h2>
+          <p class="wp-subtitle">
+            Jednostka: {{ operation.unit }} • Status: {{ operation.get_status_display }} • Priorytet: {{ operation.get_priority_display }}
+          </p>
+        </div>
+        <div class="wp-actions">
+          <a class="wp-btn" href="{% url 'osp:rescue_operation_report_pdf' operation.pk %}">Raport PDF</a>
+          <a class="wp-btn" href="{% url 'osp:rescue_operation_report_csv' operation.pk %}">Raport CSV</a>
+          <a class="wp-btn" href="{% url 'osp:rescue_operation_list' %}">Powrót</a>
+        </div>
+      </div>
+
+      <div class="wp-grid">
+        <section class="wp-card">
+          <header class="wp-card-head"><h3>Dane zdarzenia</h3></header>
+          <p><strong>Typ zdarzenia:</strong> {{ operation.incident_type }}</p>
+          <p><strong>Lokalizacja:</strong> {{ operation.location }}</p>
+          <p><strong>Data zgłoszenia:</strong> {{ operation.occurred_at|date:"Y-m-d H:i" }}</p>
+          <p><strong>Start działań:</strong> {{ operation.action_started_at|date:"Y-m-d H:i"|default:"-" }}</p>
+          <p><strong>Zakończenie:</strong> {{ operation.closed_at|date:"Y-m-d H:i"|default:"-" }}</p>
+          <p><strong>Opis:</strong></p>
+          <p>{{ operation.description }}</p>
+        </section>
+
+        <section class="wp-card">
+          <header class="wp-card-head"><h3>Raport końcowy i archiwizacja</h3></header>
+          <p>{{ operation.final_report|default:"Raport końcowy nie został jeszcze dodany." }}</p>
+
+          {% if can_manage and operation.status != 'ARCHIVED' %}
+            <hr>
+            <form method="post" action="{% url 'osp:rescue_operation_finalize' operation.pk %}" class="wp-form">
+              {% csrf_token %}
+              {{ final_report_form.as_p }}
+              <button class="wp-btn" type="submit">Zamknij działanie raportem końcowym</button>
+            </form>
+          {% endif %}
+
+          {% if can_archive %}
+            <hr>
+            <form method="post" action="{% url 'osp:rescue_operation_archive' operation.pk %}" class="wp-form">
+              {% csrf_token %}
+              {{ archive_form.as_p }}
+              <button class="btn btn-primary" type="submit">Archiwizuj działanie</button>
+            </form>
+          {% endif %}
+        </section>
+      </div>
+
+      <section class="wp-card" style="margin-top: 1rem;">
+        <header class="wp-card-head"><h3>Wymiana meldunków OSP/PSP</h3></header>
+
+        <div class="wp-table-wrap" role="region" aria-label="Meldunki OSP i PSP">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nadawca</th>
+                <th>Typ</th>
+                <th>Autor</th>
+                <th>Treść</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for msg in messages %}
+                <tr>
+                  <td>{{ msg.created_at|date:"Y-m-d H:i" }}</td>
+                  <td>{{ msg.get_sender_type_display }}</td>
+                  <td>{{ msg.get_kind_display }}</td>
+                  <td>{{ msg.author|default:"-" }}</td>
+                  <td class="wp-td-strong">{{ msg.message }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5">Brak meldunków.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <form method="post" action="{% url 'osp:rescue_operation_add_message' operation.pk %}" class="wp-form" style="margin-top: 1rem;">
+          {% csrf_token %}
+          {{ message_form.as_p }}
+          <button class="wp-btn" type="submit">Dodaj meldunek</button>
+        </form>
+      </section>
+
+      {% if can_manage and operation.status != 'ARCHIVED' and operation.status != 'CLOSED' %}
+        <section class="wp-card" style="margin-top: 1rem;">
+          <header class="wp-card-head"><h3>Zmiana statusu operacyjnego</h3></header>
+          <form method="post" action="{% url 'osp:rescue_operation_update_status' operation.pk %}" class="wp-form">
+            {% csrf_token %}
+            {{ status_form.as_p }}
+            <button class="wp-btn" type="submit">Zapisz status</button>
+          </form>
+        </section>
+      {% endif %}
+
+      <section class="wp-card" style="margin-top: 1rem;">
+        <header class="wp-card-head"><h3>Historia audytowa</h3></header>
+        <ul>
+          {% for entry in audit_logs %}
+            <li>{{ entry.created_at|date:"Y-m-d H:i" }} - {{ entry.get_event_type_display }} - {{ entry.message }}</li>
+          {% empty %}
+            <li>Brak wpisów audytowych.</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </section>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const sidebar = document.querySelector('.wp-sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+
+    if (sidebar && toggle) {
+      toggle.addEventListener('click', function () {
+        sidebar.classList.toggle('active');
+      });
+    }
+  });
+</script>
+{% endblock %}
