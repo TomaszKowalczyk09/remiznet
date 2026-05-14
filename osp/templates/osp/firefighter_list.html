@@ -1,39 +1,84 @@
 {% extends 'osp/base.html' %}
 {% block title %}Strażacy{% endblock %}
+
 {% block content %}
-<h2>Lista strażaków</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Imię</th>
-      <th>Nazwisko</th>
-      <th>PESEL</th>
-      <th>Data ur.</th>
-      <th>Jednostka</th>
-      <th>Stopień</th>
-      <th>Email</th>
-      <th>Telefon</th>
-      <th>Badania do</th>
-      <th>Akcje</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for ff in firefighters %}
-      <tr>
-        <td>{{ ff.first_name }}</td>
-        <td>{{ ff.last_name }}</td>
-        <td>{{ ff.pesel }}</td>
-        <td>{{ ff.birth_date|date:'Y-m-d' }}</td>
-        <td>{{ ff.unit.name }}</td>
-        <td>{{ ff.rank }}</td>
-        <td>{{ ff.email }}</td>
-        <td>{{ ff.phone }}</td>
-        <td>{{ ff.medical_check_valid_until|date:'Y-m-d' }}</td>
-        <td><a href="{% url 'osp:firefighter_edit' ff.pk %}">Podgląd/Edytuj</a></td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="10">Brak strażaków</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <button id="sidebar-toggle" class="wp-btn" style="margin-right:10px;">☰</button>
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Strażacy</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    {% include 'osp/_sidebar.html' with sidebar_active='firefighters' %}
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">Lista strażaków</h2>
+          <p class="wp-subtitle">Ewidencja danych osobowych, badań i kontaktów.</p>
+        </div>
+      </div>
+
+      <div class="wp-table-wrap" role="region" aria-label="Lista strażaków">
+        <table class="wp-table">
+          <thead>
+            <tr>
+              <th>Imię</th>
+              <th>Nazwisko</th>
+              <th>PESEL</th>
+              <th>Data ur.</th>
+              <th>Jednostka</th>
+              <th>Stopień</th>
+              <th>Email</th>
+              <th>Telefon</th>
+              <th>Badania do</th>
+              <th>Akcje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ff in firefighters %}
+              <tr>
+                <td class="wp-td-strong">{{ ff.first_name }}</td>
+                <td>{{ ff.last_name }}</td>
+                <td>{{ ff.pesel }}</td>
+                <td>{{ ff.birth_date|date:'Y-m-d' }}</td>
+                <td>{{ ff.unit.name }}</td>
+                <td>{{ ff.rank|default:'-' }}</td>
+                <td>{{ ff.email|default:'-' }}</td>
+                <td>{{ ff.phone|default:'-' }}</td>
+                <td>{{ ff.medical_check_valid_until|date:'Y-m-d'|default:'-' }}</td>
+                <td class="wp-td-right">
+                  <a class="wp-btn" href="{% url 'osp:firefighter_edit' ff.pk %}">Podgląd / Edytuj</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="10">Brak strażaków</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const sidebar = document.querySelector('.wp-sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+
+    if (sidebar && toggle) {
+      toggle.addEventListener('click', function () {
+        sidebar.classList.toggle('active');
+      });
+    }
+  });
+</script>
 {% endblock %}
