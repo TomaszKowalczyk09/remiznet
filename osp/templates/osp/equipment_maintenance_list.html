@@ -1,0 +1,57 @@
+{% extends "osp/base.html" %}
+
+{% block title %}Przeglądy sprzętu{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Przeglądy i serwisy sprzętu</h1>
+    <p class="text-muted">Jednostka: <strong>{{ unit.name }}</strong></p>
+
+    {% if maintenance_list %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Sprzęt</th>
+                        <th>Rodzaj serwisu</th>
+                        <th>Status</th>
+                        <th>Zaplanowana</th>
+                        <th>Wykonana</th>
+                        <th>Koszt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in maintenance_list %}
+                        <tr>
+                            <td><strong>{{ record.equipment.name }}</strong></td>
+                            <td>{{ record.get_maintenance_type_display }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if record.status == 'SCHEDULED' %}bg-warning
+                                    {% elif record.status == 'IN_PROGRESS' %}bg-info
+                                    {% elif record.status == 'COMPLETED' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ record.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ record.scheduled_date }}</td>
+                            <td>{{ record.completed_date|default:"-" }}</td>
+                            <td>{{ record.cost|default:"-" }} zł</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Brak wpisów przeglądu sprzętu.
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'osp:osp_report_list_unit' unit_pk=unit.pk %}" class="btn btn-secondary">
+            ← Powrót
+        </a>
+    </div>
+</div>
+{% endblock %}

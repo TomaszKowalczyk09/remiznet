@@ -22,6 +22,12 @@ from .forms import (
     RequestForm,
     ResponseForm,
     SignRequestForm,
+    OSPReportForm,
+    FuelUsageForm,
+    VehicleInsuranceForm,
+    FirefighterTestForm,
+    EquipmentMaintenanceForm,
+    TrainingRecordForm,
 )
 from .models import (
     Equipment,
@@ -34,6 +40,12 @@ from .models import (
     RescueOperation,
     SisAuditLog,
     Unit,
+    OSPReport,
+    FuelUsage,
+    VehicleInsurance,
+    FirefighterTest,
+    EquipmentMaintenance,
+    TrainingRecord,
 )
 
 
@@ -965,6 +977,321 @@ def panel(request):
         context['units'] = president_units(user)
 
     return render(request, 'osp/panel.html', context)
+
+
+# ==================== OSP REPORTING VIEWS ====================
+
+
+@login_required
+def osp_report_list(request, unit_pk=None):
+    """List OSP reports with optional unit filtering."""
+    user = request.user
+    if is_official(user):
+        reports = OSPReport.objects.select_related('unit', 'created_by').order_by('-created_at')
+        if unit_pk:
+            unit = get_object_or_404(Unit, pk=unit_pk)
+            reports = reports.filter(unit=unit)
+    elif is_president(user):
+        units = president_units(user)
+        reports = OSPReport.objects.select_related('unit', 'created_by').filter(unit__in=units).order_by('-created_at')
+        if unit_pk:
+            unit = get_object_or_404(units, pk=unit_pk)
+            reports = reports.filter(unit=unit)
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+    
+    return render(request, 'osp/osp_report_list.html', {'reports': reports, 'unit_pk': unit_pk})
+
+
+@login_required
+def osp_report_create(request, unit_pk):
+    """Create a new OSP report."""
+    unit = get_object_or_404(Unit, pk=unit_pk)
+    if not is_president(request.user):
+        return HttpResponseForbidden('Tylko prezes może tworzyć raporty')
+
+    if request.method == 'POST':
+        form = OSPReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.unit = unit
+            report.created_by = request.user
+            report.save()
+            return redirect('osp:osp_report_detail', pk=report.pk)
+    else:
+        form = OSPReportForm()
+    
+    return render(request, 'osp/osp_report_form.html', {'form': form, 'unit': unit})
+
+
+@login_required
+def osp_report_detail(request, pk):
+    """View OSP report details with all related data."""
+    report = get_object_or_404(OSPReport.objects.select_related('unit', 'created_by'), pk=pk)
+    user = request.user
+    
+    # Check permissions
+    if is_president(user):
+        if report.unit not in president_units(user):
+            return HttpResponseForbidden('Brak dostępu do tego raportu')
+        can_edit = report.status == OSPReport.STATUS_DRAFT
+    elif is_official(user):
+        can_edit = False
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+    
+    fuel_usage = report.fuel_usage.all()
+    
+    return render(request, 'osp/osp_report_detail.html', {
+        'report': report,
+        'fuel_usage': fuel_usage,
+        'can_edit': can_edit,
+    })
+
+
+@login_required
+def osp_report_edit(request, pk):
+    """Edit OSP report."""
+    report = get_object_or_404(OSPReport, pk=pk)
+    user = request.user
+    
+    if is_president(user):
+        if report.unit not in president_units(user) or report.status != OSPReport.STATUS_DRAFT:
+            return HttpResponseForbidden('Nie możesz edytować tego raportu')
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = OSPReportForm(request.POST, instance=report)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:osp_report_detail', pk=report.pk)
+    else:
+        form = OSPReportForm(instance=report)
+    
+    return render(request, 'osp/osp_report_form.html', {'form': form, 'report': report})
+
+
+@login_required
+def fuel_usage_add(request, report_pk):
+    """Add fuel usage record to report."""
+    report = get_object_or_404(OSPReport, pk=report_pk)
+    user = request.user
+    
+    if is_president(user):
+        if report.unit not in president_units(user) or report.status != OSPReport.STATUS_DRAFT:
+            return HttpResponseForbidden('Nie możesz dodawać paliwa do tego raportu')
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = FuelUsageForm(request.POST, unit=report.unit)
+        if form.is_valid():
+            fuel = form.save(commit=False)
+            fuel.report = report
+            fuel.recorded_by = request.user
+            fuel.save()
+            return redirect('osp:osp_report_detail', pk=report.pk)
+    else:
+        form = FuelUsageForm(unit=report.unit)
+    
+    return render(request, 'osp/fuel_usage_form.html', {'form': form, 'report': report})
+
+
+@login_required
+def vehicle_insurance_add(request, unit_pk):
+    """Add or manage vehicle insurance."""
+    unit = get_object_or_404(Unit, pk=unit_pk)
+    user = request.user
+    
+    if not is_president(user) or unit not in president_units(user):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = VehicleInsuranceForm(request.POST, unit=unit)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:vehicle_insurance_list', unit_pk=unit.pk)
+    else:
+        form = VehicleInsuranceForm(unit=unit)
+    
+    return render(request, 'osp/vehicle_insurance_form.html', {'form': form, 'unit': unit})
+
+
+@login_required
+def vehicle_insurance_list(request, unit_pk):
+    """List vehicles with insurance info."""
+    unit = get_object_or_404(Unit, pk=unit_pk)
+    user = request.user
+    
+    if is_president(user):
+        if unit not in president_units(user):
+            return HttpResponseForbidden('Brak dostępu')
+    elif is_official(user):
+        pass
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+    
+    insurance_list = VehicleInsurance.objects.filter(unit=unit).select_related('equipment')
+    
+    return render(request, 'osp/vehicle_insurance_list.html', {
+        'insurance_list': insurance_list,
+        'unit': unit,
+    })
+
+
+@login_required
+def firefighter_test_add(request, firefighter_pk):
+    """Add test/certification record for firefighter."""
+    firefighter = get_object_or_404(Firefighter, pk=firefighter_pk)
+    user = request.user
+    
+    if is_president(user):
+        if firefighter.unit not in president_units(user):
+            return HttpResponseForbidden('Brak dostępu')
+    elif is_official(user):
+        pass
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = FirefighterTestForm(request.POST)
+        if form.is_valid():
+            test = form.save(commit=False)
+            test.firefighter = firefighter
+            test.save()
+            return redirect('osp:firefighter_edit', pk=firefighter.pk)
+    else:
+        form = FirefighterTestForm()
+    
+    return render(request, 'osp/firefighter_test_form.html', {'form': form, 'firefighter': firefighter})
+
+
+@login_required
+def equipment_maintenance_list(request, unit_pk):
+    """List equipment maintenance records."""
+    unit = get_object_or_404(Unit, pk=unit_pk)
+    user = request.user
+    
+    if is_president(user):
+        if unit not in president_units(user):
+            return HttpResponseForbidden('Brak dostępu')
+    elif is_official(user):
+        pass
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+    
+    maintenance = EquipmentMaintenance.objects.filter(
+        equipment__unit=unit
+    ).select_related('equipment').order_by('-scheduled_date')
+    
+    return render(request, 'osp/equipment_maintenance_list.html', {
+        'maintenance_list': maintenance,
+        'unit': unit,
+    })
+
+
+@login_required
+def training_record_list(request, firefighter_pk):
+    """List training records for a firefighter."""
+    firefighter = get_object_or_404(Firefighter, pk=firefighter_pk)
+    user = request.user
+    
+    if is_president(user):
+        if firefighter.unit not in president_units(user):
+            return HttpResponseForbidden('Brak dostępu')
+    elif is_official(user):
+        pass
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+    
+    training = TrainingRecord.objects.filter(firefighter=firefighter).order_by('-training_date')
+    
+    return render(request, 'osp/training_record_list.html', {
+        'training_list': training,
+        'firefighter': firefighter,
+    })
+
+
+@login_required
+def osp_report_submit(request, pk):
+    """Submit report for approval."""
+    report = get_object_or_404(OSPReport, pk=pk)
+    user = request.user
+    
+    if not (is_president(user) and report.unit in president_units(user)):
+        return HttpResponseForbidden('Brak dostępu')
+    
+    if report.status != OSPReport.STATUS_DRAFT:
+        return HttpResponseBadRequest('Raport musi być w stanie roboczym')
+    
+    report.status = OSPReport.STATUS_SUBMITTED
+    report.submitted_by = user
+    report.submitted_at = timezone.now()
+    report.save()
+    
+    return redirect('osp:osp_report_detail', pk=report.pk)
+
+
+@login_required
+def osp_report_export_pdf(request, pk):
+    """Export OSP report as PDF."""
+    report = get_object_or_404(OSPReport.objects.prefetch_related('fuel_usage'), pk=pk)
+    user = request.user
+    
+    # Check permissions
+    if is_president(user):
+        if report.unit not in president_units(user):
+            return HttpResponseForbidden('Brak dostępu')
+    elif is_official(user):
+        pass
+    else:
+        return HttpResponseForbidden('Brak dostępu')
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="raport-osp-{report.pk}.pdf"'
+    
+    pdf = canvas.Canvas(response, pagesize=A4)
+    _, page_height = A4
+    text = pdf.beginText(40, page_height - 50)
+    text.setFont('Helvetica-Bold', 14)
+    text.textLine('Raport Ochotniczej Straży Pożarnej')
+    text.setFont('Helvetica', 10)
+    text.textLine('')
+    
+    lines = [
+        f'Jednostka: {report.unit.name}',
+        f'Okres: {report.report_start_date} - {report.report_end_date}',
+        f'Status: {report.get_status_display()}',
+        f'Utworzono: {report.created_at.strftime("%Y-%m-%d %H:%M")}',
+        '',
+        f'Tytuł: {report.title}',
+    ]
+    for line in lines:
+        text.textLine(line)
+    
+    if report.description:
+        text.textLine('')
+        text.textLine('Opis:')
+        for raw_line in report.description.splitlines():
+            text.textLine(raw_line[:115])
+    
+    # Fuel usage summary
+    fuel_records = report.fuel_usage.all()
+    if fuel_records.exists():
+        text.textLine('')
+        text.textLine('Rozliczenie paliwa:')
+        total_liters = sum(f.liters for f in fuel_records)
+        total_cost = sum(f.total_cost for f in fuel_records)
+        text.textLine(f'Łączna ilość paliwa: {total_liters} litrów')
+        text.textLine(f'Łączny koszt: {total_cost} zł')
+        text.textLine(f'Liczba tankowań: {fuel_records.count()}')
+    
+    pdf.drawText(text)
+    pdf.showPage()
+    pdf.save()
+    
+    return response
 
 
 def landing(request):

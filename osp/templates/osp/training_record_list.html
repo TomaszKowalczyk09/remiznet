@@ -1,0 +1,63 @@
+{% extends "osp/base.html" %}
+
+{% block title %}Szkolenia i certyfikaty{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Szkolenia i certyfikaty</h1>
+    <p class="text-muted">Strażak: <strong>{{ firefighter.first_name }} {{ firefighter.last_name }}</strong></p>
+
+    {% if training_list %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nazwa szkolenia</th>
+                        <th>Data</th>
+                        <th>Godzin</th>
+                        <th>Status</th>
+                        <th>Cert. ważny do</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for training in training_list %}
+                        <tr>
+                            <td><strong>{{ training.training_name }}</strong></td>
+                            <td>{{ training.training_date }}</td>
+                            <td>{{ training.duration_hours }}h</td>
+                            <td>
+                                <span class="badge 
+                                    {% if training.status == 'PLANNED' %}bg-warning
+                                    {% elif training.status == 'COMPLETED' %}bg-success
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ training.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if training.certification_expiration %}
+                                    {% now "Y-m-d" as today %}
+                                    <strong {% if training.certification_expiration < today %}class="text-danger"{% endif %}>
+                                        {{ training.certification_expiration }}
+                                    </strong>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Brak wpisów szkolenia.
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'osp:firefighter_edit' pk=firefighter.pk %}" class="btn btn-secondary">
+            ← Powrót do profilu strażaka
+        </a>
+    </div>
+</div>
+{% endblock %}

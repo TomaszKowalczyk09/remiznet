@@ -1,0 +1,66 @@
+{% extends "osp/base.html" %}
+
+{% block title %}{% if report %}Edytuj raport{% else %}Nowy raport{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>{% if report %}Edytuj raport{% else %}Nowy raport{% endif %}</h1>
+    
+    {% if unit %}
+        <p class="text-muted">Jednostka: <strong>{{ unit.name }}</strong></p>
+    {% endif %}
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-md-8">
+                {% for field in form %}
+                    {% if field.field.widget.input_type == 'hidden' %}
+                        {{ field }}
+                    {% else %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {{ field.label }} 
+                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {% if field.field.widget.input_type == 'textarea' %}
+                                {{ field.as_widget|safe }}
+                            {% else %}
+                                {{ field.as_widget|safe }}
+                            {% endif %}
+                            {% if field.help_text %}
+                                <small class="form-text text-muted">{{ field.help_text|safe }}</small>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ field.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        {% if report %}Zaktualizuj raport{% else %}Utwórz raport{% endif %}
+                    </button>
+                    <a href="{% if report %}{% url 'osp:osp_report_detail' pk=report.pk %}{% else %}{% url 'osp:osp_report_list' %}{% endif %}" class="btn btn-secondary">
+                        Anuluj
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-control, .form-select, textarea {
+        border: 1px solid #dee2e6;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+</style>
+{% endblock %}

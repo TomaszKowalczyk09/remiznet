@@ -7,6 +7,12 @@ from .models import (
     RequestResponse,
     RescueMessage,
     RescueOperation,
+    OSPReport,
+    FuelUsage,
+    VehicleInsurance,
+    FirefighterTest,
+    EquipmentMaintenance,
+    TrainingRecord,
 )
 
 
@@ -213,3 +219,158 @@ class RescueFinalReportForm(forms.ModelForm):
 
 class RescueArchiveForm(forms.Form):
     confirm = forms.BooleanField(label='Potwierdzam archiwizację działania', required=True)
+
+
+# ==================== OSP REPORTING FORMS ====================
+
+
+class OSPReportForm(forms.ModelForm):
+    class Meta:
+        model = OSPReport
+        fields = ['title', 'description', 'report_start_date', 'report_end_date']
+        labels = {
+            'title': 'Tytuł raportu',
+            'description': 'Opis/Uwagi',
+            'report_start_date': 'Data rozpoczęcia okresu sprawozdawczego',
+            'report_end_date': 'Data zakończenia okresu sprawozdawczego',
+        }
+        widgets = {
+            'report_start_date': forms.DateInput(attrs={'type': 'date'}),
+            'report_end_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class FuelUsageForm(forms.ModelForm):
+    class Meta:
+        model = FuelUsage
+        fields = ['equipment', 'date', 'liters', 'unit_price', 'odometer_reading', 'notes']
+        labels = {
+            'equipment': 'Pojazd',
+            'date': 'Data tankowania',
+            'liters': 'Ilość paliwa (litry)',
+            'unit_price': 'Cena za litr',
+            'odometer_reading': 'Stan licznika (km)',
+            'notes': 'Uwagi',
+        }
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'liters': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+            'unit_price': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+            'odometer_reading': forms.NumberInput(attrs={'min': '0'}),
+        }
+
+    def __init__(self, *args, unit=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if unit is not None:
+            self.fields['equipment'].queryset = Equipment.objects.filter(unit=unit).order_by('name')
+        else:
+            self.fields['equipment'].queryset = Equipment.objects.none()
+
+
+class VehicleInsuranceForm(forms.ModelForm):
+    class Meta:
+        model = VehicleInsurance
+        fields = ['equipment', 'registration_number', 'vin', 'insurance_provider', 'policy_number',
+                  'policy_start_date', 'policy_end_date', 'coverage_type', 'premium_amount', 'notes']
+        labels = {
+            'equipment': 'Pojazd',
+            'registration_number': 'Numer rejestracyjny',
+            'vin': 'Numer VIN',
+            'insurance_provider': 'Ubezpieczalnia',
+            'policy_number': 'Numer polisy',
+            'policy_start_date': 'Data rozpoczęcia ubezpieczenia',
+            'policy_end_date': 'Data wygaśnięcia ubezpieczenia',
+            'coverage_type': 'Rodzaj ubezpieczenia',
+            'premium_amount': 'Kwota składki rocznej',
+            'notes': 'Uwagi',
+        }
+        widgets = {
+            'policy_start_date': forms.DateInput(attrs={'type': 'date'}),
+            'policy_end_date': forms.DateInput(attrs={'type': 'date'}),
+            'premium_amount': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+        }
+
+    def __init__(self, *args, unit=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if unit is not None:
+            self.fields['equipment'].queryset = Equipment.objects.filter(unit=unit).order_by('name')
+        else:
+            self.fields['equipment'].queryset = Equipment.objects.none()
+
+
+class FirefighterTestForm(forms.ModelForm):
+    class Meta:
+        model = FirefighterTest
+        fields = ['test_type', 'test_name', 'test_date', 'result', 'expiration_date',
+                  'issued_by', 'certificate_number', 'notes']
+        labels = {
+            'test_type': 'Rodzaj badania',
+            'test_name': 'Nazwa badania/certyfikatu',
+            'test_date': 'Data badania',
+            'result': 'Wynik',
+            'expiration_date': 'Data wygaśnięcia',
+            'issued_by': 'Wydane przez',
+            'certificate_number': 'Numer certyfikatu',
+            'notes': 'Uwagi',
+        }
+        widgets = {
+            'test_date': forms.DateInput(attrs={'type': 'date'}),
+            'expiration_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+
+class EquipmentMaintenanceForm(forms.ModelForm):
+    class Meta:
+        model = EquipmentMaintenance
+        fields = ['maintenance_type', 'status', 'scheduled_date', 'completed_date',
+                  'description', 'technician', 'cost', 'notes']
+        labels = {
+            'maintenance_type': 'Rodzaj serwisu',
+            'status': 'Status',
+            'scheduled_date': 'Data zaplanowana',
+            'completed_date': 'Data wykonania',
+            'description': 'Opis pracy',
+            'technician': 'Technik/Serwis',
+            'cost': 'Koszt',
+            'notes': 'Uwagi',
+        }
+        widgets = {
+            'scheduled_date': forms.DateInput(attrs={'type': 'date'}),
+            'completed_date': forms.DateInput(attrs={'type': 'date'}),
+            'cost': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class TrainingRecordForm(forms.ModelForm):
+    class Meta:
+        model = TrainingRecord
+        fields = ['training_name', 'training_date', 'duration_hours', 'status',
+                  'instructor_name', 'certification_expiration', 'completion_certificate', 'notes']
+        labels = {
+            'training_name': 'Nazwa szkolenia',
+            'training_date': 'Data szkolenia',
+            'duration_hours': 'Czas trwania (godziny)',
+            'status': 'Status',
+            'instructor_name': 'Prowadzący',
+            'certification_expiration': 'Certyfikat ważny do',
+            'completion_certificate': 'Numer certyfikatu',
+            'notes': 'Uwagi',
+        }
+        widgets = {
+            'training_date': forms.DateInput(attrs={'type': 'date'}),
+            'certification_expiration': forms.DateInput(attrs={'type': 'date'}),
+            'duration_hours': forms.NumberInput(attrs={'min': '0'}),
+        }
+
+
+class FuelUsageInlineForm(forms.ModelForm):
+    class Meta:
+        model = FuelUsage
+        fields = ['equipment', 'date', 'liters', 'unit_price', 'odometer_reading', 'notes']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'liters': forms.NumberInput(attrs={'type': 'number', 'step': '0.01', 'class': 'form-control'}),
+            'unit_price': forms.NumberInput(attrs={'type': 'number', 'step': '0.01', 'class': 'form-control'}),
+        }

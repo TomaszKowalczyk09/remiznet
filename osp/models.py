@@ -296,3 +296,198 @@ class RescueAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.get_event_type_display()} - {self.operation_id}"
+
+
+# ==================== OSP REPORTING MODELS ====================
+
+
+class OSPReport(models.Model):
+    STATUS_DRAFT = 'DRAFT'
+    STATUS_SUBMITTED = 'SUBMITTED'
+    STATUS_ACCEPTED = 'ACCEPTED'
+    STATUS_ARCHIVED = 'ARCHIVED'
+
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, 'Roboczy'),
+        (STATUS_SUBMITTED, 'Przesłany'),
+        (STATUS_ACCEPTED, 'Zaakceptowany'),
+        (STATUS_ARCHIVED, 'Zarchiwizowany'),
+    ]
+
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='osp_reports')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_osp_reports')
+    title = models.CharField(max_length=250)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    report_start_date = models.DateField()
+    report_end_date = models.DateField()
+    submitted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='submitted_osp_reports')
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_osp_reports')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('unit', 'report_start_date', 'report_end_date')
+
+    def __str__(self):
+        return f"{self.title} ({self.unit}) [{self.report_start_date} - {self.report_end_date}]"
+
+
+class FuelUsage(models.Model):
+    report = models.ForeignKey(OSPReport, on_delete=models.CASCADE, related_name='fuel_usage')
+    equipment = models.ForeignKey(Equipment, on_delete=models.SET_NULL, null=True, blank=True, related_name='fuel_usage')
+    date = models.DateField()
+    liters = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_cost = models.DecimalField(max_digits=12, decimal_places=2)
+    odometer_reading = models.IntegerField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['date']
+
+    def __str__(self):
+        return f"Fuel {self.liters}L on {self.date} ({self.report})"
+
+    def save(self, *args, **kwargs):
+        self.total_cost = self.liters * self.unit_price
+        super().save(*args, **kwargs)
+
+
+class VehicleInsurance(models.Model):
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='vehicle_insurance')
+    equipment = models.OneToOneField(Equipment, on_delete=models.CASCADE, related_name='insurance')
+    registration_number = models.CharField(max_length=50)
+    vin = models.CharField(max_length=100, blank=True)
+    insurance_provider = models.CharField(max_length=200)
+    policy_number = models.CharField(max_length=100)
+    policy_start_date = models.DateField()
+    policy_end_date = models.DateField()
+    coverage_type = models.CharField(max_length=100, blank=True)
+    premium_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['policy_end_date']
+
+    def __str__(self):
+        return f"{self.equipment} - {self.registration_number} ({self.insurance_provider})"
+
+
+class FirefighterTest(models.Model):
+    TEST_TYPE_MEDICAL = 'MEDICAL'
+    TEST_TYPE_CERTIFICATION = 'CERTIFICATION'
+    TEST_TYPE_TRAINING = 'TRAINING'
+
+    TEST_TYPE_CHOICES = [
+        (TEST_TYPE_MEDICAL, 'Badanie lekarskie'),
+        (TEST_TYPE_CERTIFICATION, 'Certyfikat/kwalifikacja'),
+        (TEST_TYPE_TRAINING, 'Szkolenie'),
+    ]
+
+    RESULT_PASS = 'PASS'
+    RESULT_FAIL = 'FAIL'
+    RESULT_PENDING = 'PENDING'
+
+    RESULT_CHOICES = [
+        (RESULT_PASS, 'Pozytywny'),
+        (RESULT_FAIL, 'Negatywny'),
+        (RESULT_PENDING, 'Oczekujący'),
+    ]
+
+    firefighter = models.ForeignKey(Firefighter, on_delete=models.CASCADE, related_name='tests')
+    test_type = models.CharField(max_length=20, choices=TEST_TYPE_CHOICES)
+    test_name = models.CharField(max_length=250)
+    test_date = models.DateField()
+    result = models.CharField(max_length=20, choices=RESULT_CHOICES)
+    expiration_date = models.DateField(null=True, blank=True)
+    issued_by = models.CharField(max_length=200, blank=True)
+    certificate_number = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-test_date']
+
+    def __str__(self):
+        return f"{self.firefighter} - {self.get_test_type_display()} ({self.test_date})"
+
+
+class EquipmentMaintenance(models.Model):
+    MAINTENANCE_TYPE_PREVENTIVE = 'PREVENTIVE'
+    MAINTENANCE_TYPE_CORRECTIVE = 'CORRECTIVE'
+    MAINTENANCE_TYPE_INSPECTION = 'INSPECTION'
+
+    MAINTENANCE_TYPE_CHOICES = [
+        (MAINTENANCE_TYPE_PREVENTIVE, 'Preventywna'),
+        (MAINTENANCE_TYPE_CORRECTIVE, 'Naprawy'),
+        (MAINTENANCE_TYPE_INSPECTION, 'Przegląd'),
+    ]
+
+    STATUS_SCHEDULED = 'SCHEDULED'
+    STATUS_IN_PROGRESS = 'IN_PROGRESS'
+    STATUS_COMPLETED = 'COMPLETED'
+
+    STATUS_CHOICES = [
+        (STATUS_SCHEDULED, 'Zaplanowana'),
+        (STATUS_IN_PROGRESS, 'W trakcie'),
+        (STATUS_COMPLETED, 'Ukończona'),
+    ]
+
+    equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, related_name='maintenance_logs')
+    maintenance_type = models.CharField(max_length=20, choices=MAINTENANCE_TYPE_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_SCHEDULED)
+    scheduled_date = models.DateField()
+    completed_date = models.DateField(null=True, blank=True)
+    description = models.TextField()
+    technician = models.CharField(max_length=200)
+    cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-scheduled_date']
+
+    def __str__(self):
+        return f"{self.equipment} - {self.get_maintenance_type_display()} ({self.scheduled_date})"
+
+
+class TrainingRecord(models.Model):
+    STATUS_PLANNED = 'PLANNED'
+    STATUS_COMPLETED = 'COMPLETED'
+    STATUS_CANCELLED = 'CANCELLED'
+
+    STATUS_CHOICES = [
+        (STATUS_PLANNED, 'Zaplanowana'),
+        (STATUS_COMPLETED, 'Ukończona'),
+        (STATUS_CANCELLED, 'Anulowana'),
+    ]
+
+    firefighter = models.ForeignKey(Firefighter, on_delete=models.CASCADE, related_name='training_records')
+    training_name = models.CharField(max_length=250)
+    training_date = models.DateField()
+    duration_hours = models.IntegerField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PLANNED)
+    instructor_name = models.CharField(max_length=200, blank=True)
+    certification_expiration = models.DateField(null=True, blank=True)
+    completion_certificate = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-training_date']
+
+    def __str__(self):
+        return f"{self.firefighter} - {self.training_name} ({self.training_date})"

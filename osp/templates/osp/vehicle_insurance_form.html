@@ -1,0 +1,45 @@
+{% extends "osp/base.html" %}
+
+{% block title %}Dodaj ubezpieczenie{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Dodaj/Edytuj ubezpieczenie pojazdu</h1>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-md-6">
+                {% for field in form %}
+                    {% if field.field.widget.input_type == 'hidden' %}
+                        {{ field }}
+                    {% else %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {{ field.label }} 
+                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field.as_widget|safe }}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ field.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        Zapisz ubezpieczenie
+                    </button>
+                    <a href="{% url 'osp:vehicle_insurance_list' unit_pk=unit.pk %}" class="btn btn-secondary">
+                        Anuluj
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

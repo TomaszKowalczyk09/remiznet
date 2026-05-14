@@ -1,0 +1,119 @@
+{% extends "osp/base.html" %}
+
+{% block title %}{{ report.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>{{ report.title }}</h1>
+            <p class="text-muted">Jednostka: <strong>{{ report.unit.name }}</strong></p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'osp:osp_report_export_pdf' pk=report.pk %}" class="btn btn-secondary" download>
+                📄 Pobierz PDF
+            </a>
+            {% if can_edit %}
+                <a href="{% url 'osp:osp_report_edit' pk=report.pk %}" class="btn btn-warning">
+                    ✏️ Edytuj
+                </a>
+                <a href="{% url 'osp:osp_report_submit' pk=report.pk %}" class="btn btn-success" onclick="return confirm('Czy na pewno chcesz przesłać raport?')">
+                    ✓ Prześlij
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Report Info -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Informacje podstawowe</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Status:</dt>
+                <dd class="col-sm-9">
+                    <span class="badge 
+                        {% if report.status == 'DRAFT' %}bg-warning
+                        {% elif report.status == 'SUBMITTED' %}bg-info
+                        {% elif report.status == 'ACCEPTED' %}bg-success
+                        {% else %}bg-secondary{% endif %}">
+                        {{ report.get_status_display }}
+                    </span>
+                </dd>
+                <dt class="col-sm-3">Okres:</dt>
+                <dd class="col-sm-9">{{ report.report_start_date }} - {{ report.report_end_date }}</dd>
+                <dt class="col-sm-3">Utworzono:</dt>
+                <dd class="col-sm-9">{{ report.created_at|date:"Y-m-d H:i" }} przez {{ report.created_by }}</dd>
+            </dl>
+            {% if report.description %}
+                <p><strong>Opis:</strong></p>
+                <p>{{ report.description|linebreaks }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Fuel Usage Section -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Rozliczenie paliwa</h5>
+            {% if can_edit %}
+                <a href="{% url 'osp:fuel_usage_add' report_pk=report.pk %}" class="btn btn-sm btn-primary">
+                    + Dodaj tankowanie
+                </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if fuel_usage %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Pojazd</th>
+                                <th>Litry</th>
+                                <th>Cena/l</th>
+                                <th>Razem</th>
+                                <th>Licznik (km)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fuel in fuel_usage %}
+                                <tr>
+                                    <td>{{ fuel.date }}</td>
+                                    <td>{{ fuel.equipment.name }}</td>
+                                    <td>{{ fuel.liters }}</td>
+                                    <td>{{ fuel.unit_price }} zł</td>
+                                    <td><strong>{{ fuel.total_cost }} zł</strong></td>
+                                    <td>{{ fuel.odometer_reading|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                            <tr class="table-info">
+                                <td colspan="2"><strong>RAZEM:</strong></td>
+                                <td><strong>{{ fuel_usage|length }} tankowań</strong></td>
+                                <td><strong>{{ fuel_usage|sum:"liters" }} L</strong></td>
+                                <td colspan="2"><strong>{{ fuel_usage|sum:"total_cost" }} zł</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">Brak wpisów rozliczenia paliwa.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="mt-4">
+        <a href="{% url 'osp:osp_report_list' %}" class="btn btn-secondary">
+            ← Powrót do listy
+        </a>
+    </div>
+</div>
+
+<!-- Custom template filter for sum -->
+{% load custom_filters %}
+
+{% endblock %}

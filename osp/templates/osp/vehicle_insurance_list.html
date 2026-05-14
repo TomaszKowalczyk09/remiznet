@@ -1,0 +1,65 @@
+{% extends "osp/base.html" %}
+
+{% block title %}Ubezpieczenie pojazdów{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Ubezpieczenie pojazdów</h1>
+    <p class="text-muted">Jednostka: <strong>{{ unit.name }}</strong></p>
+    
+    <a href="{% url 'osp:vehicle_insurance_add' unit_pk=unit.pk %}" class="btn btn-primary mb-3">
+        + Dodaj pojazd
+    </a>
+
+    {% if insurance_list %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Pojazd</th>
+                        <th>Numer rej.</th>
+                        <th>Ubezpieczalnia</th>
+                        <th>Ważne do</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for insurance in insurance_list %}
+                        <tr>
+                            <td><strong>{{ insurance.equipment.name }}</strong></td>
+                            <td>{{ insurance.registration_number }}</td>
+                            <td>{{ insurance.insurance_provider }}</td>
+                            <td>
+                                {% now "Y-m-d" as today %}
+                                <strong {% if insurance.policy_end_date < today %}class="text-danger"{% endif %}>
+                                    {{ insurance.policy_end_date }}
+                                </strong>
+                            </td>
+                            <td>
+                                {% now "Y-m-d" as today %}
+                                {% if insurance.policy_end_date < today %}
+                                    <span class="badge bg-danger">Wygasłe</span>
+                                {% elif insurance.policy_end_date <= today|add:60d %}
+                                    <span class="badge bg-warning">Wkrótce</span>
+                                {% else %}
+                                    <span class="badge bg-success">Aktywne</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Brak wpisów ubezpieczenia pojazdów.
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'osp:osp_report_list_unit' unit_pk=unit.pk %}" class="btn btn-secondary">
+            ← Powrót
+        </a>
+    </div>
+</div>
+{% endblock %}

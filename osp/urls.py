@@ -40,4 +40,19 @@ urlpatterns = [
     path('requests/<int:pk>/', views.request_detail, name='request_detail'),
     path('requests/<int:pk>/respond/', views.request_respond, name='request_respond'),
     path('firefighters/<int:pk>/edit/', views.firefighter_edit, name='firefighter_edit'),
+    
+    # ==================== OSP REPORTING URLS ====================
+    path('reports/', views.osp_report_list, name='osp_report_list'),
+    path('units/<int:unit_pk>/reports/', views.osp_report_list, name='osp_report_list_unit'),
+    path('units/<int:unit_pk>/reports/new/', views.osp_report_create, name='osp_report_create'),
+    path('reports/<int:pk>/', views.osp_report_detail, name='osp_report_detail'),
+    path('reports/<int:pk>/edit/', views.osp_report_edit, name='osp_report_edit'),
+    path('reports/<int:pk>/submit/', views.osp_report_submit, name='osp_report_submit'),
+    path('reports/<int:pk>/export/pdf/', views.osp_report_export_pdf, name='osp_report_export_pdf'),
+    path('reports/<int:report_pk>/fuel/add/', views.fuel_usage_add, name='fuel_usage_add'),
+    path('units/<int:unit_pk>/vehicles/insurance/add/', views.vehicle_insurance_add, name='vehicle_insurance_add'),
+    path('units/<int:unit_pk>/vehicles/insurance/', views.vehicle_insurance_list, name='vehicle_insurance_list'),
+    path('firefighters/<int:firefighter_pk>/test/add/', views.firefighter_test_add, name='firefighter_test_add'),
+    path('units/<int:unit_pk>/maintenance/', views.equipment_maintenance_list, name='equipment_maintenance_list'),
+    path('firefighters/<int:firefighter_pk>/training/', views.training_record_list, name='training_record_list'),
 ]
