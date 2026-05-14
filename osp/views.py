@@ -1,4 +1,5 @@
 import csv
+from pathlib import Path
 
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.decorators import login_required
@@ -6,6 +7,9 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.pdfmetrics import Font
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -98,6 +102,54 @@ def log_rescue_event(operation, actor, event_type, message):
         event_type=event_type,
         message=message,
     )
+
+
+def _register_helvetica_neue_fonts():
+    font_dir = Path.home() / 'AppData' / 'Local' / 'Microsoft' / 'Windows' / 'Fonts'
+    font_map = {
+        'HelveticaNeue': 'HelveticaNeueRoman.otf',
+        'HelveticaNeue-Bold': 'HelveticaNeueBold.otf',
+        'HelveticaNeue-Italic': 'HelveticaNeueItalic.ttf',
+        'HelveticaNeue-BoldItalic': 'HelveticaNeueBoldItalic.otf',
+    }
+
+    for font_name, filename in font_map.items():
+        font_path = font_dir / filename
+        if font_name in pdfmetrics.getRegisteredFontNames():
+            continue
+
+        if font_path.exists() and font_path.suffix.lower() in {'.ttf', '.ttc'}:
+            try:
+                pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
+                continue
+            except Exception:
+                pass
+
+        base_font = {
+            'HelveticaNeue': 'Helvetica',
+            'HelveticaNeue-Bold': 'Helvetica-Bold',
+            'HelveticaNeue-Italic': 'Helvetica-Oblique',
+            'HelveticaNeue-BoldItalic': 'Helvetica-BoldOblique',
+        }[font_name]
+        pdfmetrics.registerFont(Font(font_name, base_font, 'WinAnsiEncoding'))
+
+
+def _pdf_font_name(weight='regular', italic=False):
+    _register_helvetica_neue_fonts()
+
+    if weight == 'bold' and italic:
+        return 'HelveticaNeue-BoldItalic' if 'HelveticaNeue-BoldItalic' in pdfmetrics.getRegisteredFontNames() else 'Helvetica-BoldOblique'
+    if weight == 'bold':
+        return 'HelveticaNeue-Bold' if 'HelveticaNeue-Bold' in pdfmetrics.getRegisteredFontNames() else 'Helvetica-Bold'
+    if italic:
+        return 'HelveticaNeue-Italic' if 'HelveticaNeue-Italic' in pdfmetrics.getRegisteredFontNames() else 'Helvetica-Oblique'
+    return 'HelveticaNeue' if 'HelveticaNeue' in pdfmetrics.getRegisteredFontNames() else 'Helvetica'
+
+
+def _set_pdf_fonts(text_object):
+    text_object.setFont(_pdf_font_name('bold'), 14)
+    text_object.textLine('')
+    text_object.setFont(_pdf_font_name(), 10)
 
 
 @login_required
@@ -428,9 +480,9 @@ def request_pdf(request, pk):
     pdf = canvas.Canvas(response, pagesize=A4)
     _, page_height = A4
     text = pdf.beginText(40, page_height - 50)
-    text.setFont('Helvetica-Bold', 14)
+    text.setFont(_pdf_font_name('bold'), 14)
     text.textLine('Wniosek OSP / KSRG')
-    text.setFont('Helvetica', 10)
+    text.setFont(_pdf_font_name(), 10)
     text.textLine('')
 
     lines = [
@@ -763,9 +815,9 @@ def rescue_operation_report_pdf(request, pk):
     pdf = canvas.Canvas(response, pagesize=A4)
     _, page_height = A4
     text = pdf.beginText(40, page_height - 50)
-    text.setFont('Helvetica-Bold', 14)
+    text.setFont(_pdf_font_name('bold'), 14)
     text.textLine('Raport operacyjny działania ratowniczego')
-    text.setFont('Helvetica', 10)
+    text.setFont(_pdf_font_name(), 10)
     text.textLine('')
 
     lines = [
@@ -942,9 +994,9 @@ def rescue_monthly_report_pdf(request):
     pdf = canvas.Canvas(response, pagesize=A4)
     _, page_height = A4
     text = pdf.beginText(40, page_height - 50)
-    text.setFont('Helvetica-Bold', 14)
+    text.setFont(_pdf_font_name('bold'), 14)
     text.textLine(f'Raport miesięczny działań ratowniczych: {year}-{month:02d}')
-    text.setFont('Helvetica', 10)
+    text.setFont(_pdf_font_name(), 10)
     text.textLine('')
     text.textLine(f'Liczba działań: {operations.count()}')
     text.textLine('')
@@ -1254,9 +1306,9 @@ def osp_report_export_pdf(request, pk):
     pdf = canvas.Canvas(response, pagesize=A4)
     _, page_height = A4
     text = pdf.beginText(40, page_height - 50)
-    text.setFont('Helvetica-Bold', 14)
+    text.setFont(_pdf_font_name('bold'), 14)
     text.textLine('Raport Ochotniczej Straży Pożarnej')
-    text.setFont('Helvetica', 10)
+    text.setFont(_pdf_font_name(), 10)
     text.textLine('')
     
     lines = [

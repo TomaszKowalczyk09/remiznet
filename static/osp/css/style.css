@@ -9,7 +9,7 @@
 }
 *{box-sizing:border-box}
 body{
-  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   background:var(--bg);
   color:#0f1724;
   margin:0;
@@ -922,7 +922,7 @@ button, .btn{cursor:pointer}
   --rn-muted: #4e5b6d;
   --rn-gold: #f4b248;
   margin-top: -2rem;
-  font-family: "IBM Plex Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: var(--rn-text);
   background:
     radial-gradient(circle at 12% -8%, rgba(186, 31, 47, .07), transparent 28%),
@@ -1016,7 +1016,7 @@ button, .btn{cursor:pointer}
 .rn-section-head h2,
 .rn-final-cta h2,
 .rn-hero-panel h2 {
-  font-family: Cambria, "Times New Roman", serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: .015em;
 }
 
