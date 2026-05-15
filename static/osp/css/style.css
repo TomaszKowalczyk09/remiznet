@@ -714,6 +714,52 @@ button, .btn{cursor:pointer}
 
 .wp-btn:hover { background: #fff; }
 
+.wp-btn--primary {
+  background: #2b8bd6;
+  color: #fff;
+  border-color: #246aa8;
+}
+
+.wp-btn--primary:hover {
+  background: #246aa8;
+}
+
+.wp-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.wp-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 160px;
+  margin-top: 4px;
+}
+
+.wp-dropdown-item {
+  display: block;
+  padding: .5rem .75rem;
+  color: #1d2327;
+  text-decoration: none;
+  font-size: .86rem;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  white-space: nowrap;
+}
+
+.wp-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.wp-dropdown-item:hover {
+  background: #f6f7f7;
+}
+
 .wp-empty {
   margin: 0;
   color: #50575e;

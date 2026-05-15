@@ -25,6 +25,22 @@
           <h2 class="wp-title">Lista strażaków</h2>
           <p class="wp-subtitle">Ewidencja danych osobowych, badań i kontaktów.</p>
         </div>
+        {% if is_president %}
+          <div class="wp-actions">
+            {% if unit %}
+              <a class="wp-btn wp-btn--primary" href="{% url 'osp:firefighter_add' unit.pk %}">+ Dodaj strażaka</a>
+            {% elif units %}
+              <div class="wp-dropdown">
+                <button class="wp-btn wp-btn--primary" id="add-firefighter-btn">+ Dodaj strażaka</button>
+                <div class="wp-dropdown-menu" id="unit-menu" style="display:none;">
+                  {% for u in units %}
+                    <a class="wp-dropdown-item" href="{% url 'osp:firefighter_add' u.pk %}">{{ u.name }}</a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
       </div>
 
       <div class="wp-table-wrap" role="region" aria-label="Lista strażaków">
@@ -77,6 +93,19 @@
     if (sidebar && toggle) {
       toggle.addEventListener('click', function () {
         sidebar.classList.toggle('active');
+      });
+    }
+
+    const addBtn = document.getElementById('add-firefighter-btn');
+    const unitMenu = document.getElementById('unit-menu');
+    if (addBtn && unitMenu) {
+      addBtn.addEventListener('click', function () {
+        unitMenu.style.display = unitMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.wp-dropdown')) {
+          unitMenu.style.display = 'none';
+        }
       });
     }
   });

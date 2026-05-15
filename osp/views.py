@@ -155,43 +155,55 @@ def _set_pdf_fonts(text_object):
 @login_required
 def firefighter_list(request, unit_pk=None):
     user = request.user
+    context = {'is_president': is_president(user)}
+    
     if is_official(user):
         if unit_pk:
             unit = get_object_or_404(Unit, pk=unit_pk)
             firefighters = Firefighter.objects.filter(unit=unit)
+            context['unit'] = unit
         else:
             firefighters = Firefighter.objects.all()
     elif is_president(user):
         units = president_units(user)
+        context['units'] = units
         if unit_pk:
             unit = get_object_or_404(units, pk=unit_pk)
             firefighters = Firefighter.objects.filter(unit=unit)
+            context['unit'] = unit
         else:
             firefighters = Firefighter.objects.filter(unit__in=units)
     else:
         return HttpResponseForbidden('Brak dostępu')
-    return render(request, 'osp/firefighter_list.html', {'firefighters': firefighters})
+    context['firefighters'] = firefighters
+    return render(request, 'osp/firefighter_list.html', context)
 
 
 @login_required
 def equipment_list(request, unit_pk=None):
     user = request.user
+    context = {'is_president': is_president(user)}
+    
     if is_official(user):
         if unit_pk:
             unit = get_object_or_404(Unit, pk=unit_pk)
             equipment = Equipment.objects.filter(unit=unit)
+            context['unit'] = unit
         else:
             equipment = Equipment.objects.all()
     elif is_president(user):
         units = president_units(user)
+        context['units'] = units
         if unit_pk:
             unit = get_object_or_404(units, pk=unit_pk)
             equipment = Equipment.objects.filter(unit=unit)
+            context['unit'] = unit
         else:
             equipment = Equipment.objects.filter(unit__in=units)
     else:
         return HttpResponseForbidden('Brak dostępu')
-    return render(request, 'osp/equipment_list.html', {'equipment_list': equipment})
+    context['equipment_list'] = equipment
+    return render(request, 'osp/equipment_list.html', context)
 
 
 @login_required
@@ -223,23 +235,28 @@ def equipment_create(request, unit_pk):
 @login_required
 def personnel_list(request, unit_pk=None):
     user = request.user
+    context = {'is_president': is_president(user)}
+    
     if is_official(user):
         if unit_pk:
             unit = get_object_or_404(Unit, pk=unit_pk)
             personnel = PersonnelResource.objects.filter(unit=unit)
+            context['unit'] = unit
         else:
             personnel = PersonnelResource.objects.all()
     elif is_president(user):
         units = president_units(user)
+        context['units'] = units
         if unit_pk:
             unit = get_object_or_404(units, pk=unit_pk)
             personnel = PersonnelResource.objects.filter(unit=unit)
+            context['unit'] = unit
         else:
             personnel = PersonnelResource.objects.filter(unit__in=units)
     else:
         return HttpResponseForbidden('Brak dostępu')
-
-    return render(request, 'osp/personnel_list.html', {'personnel_list': personnel})
+    context['personnel_list'] = personnel
+    return render(request, 'osp/personnel_list.html', context)
 
 
 @login_required
@@ -599,14 +616,18 @@ def request_respond(request, pk):
 
 @login_required
 def rescue_operation_list(request):
+    context = {'is_president': is_president(request.user)}
+    
     if is_official(request.user):
         operations = RescueOperation.objects.select_related('unit', 'created_by').order_by('-updated_at')
     elif is_president(request.user):
         operations = RescueOperation.objects.select_related('unit', 'created_by').filter(created_by=request.user).order_by('-updated_at')
+        context['units'] = president_units(request.user)
     else:
         return HttpResponseForbidden('Brak uprawnień')
 
-    return render(request, 'osp/rescue_operation_list.html', {'operations': operations})
+    context['operations'] = operations
+    return render(request, 'osp/rescue_operation_list.html', context)
 
 
 @login_required

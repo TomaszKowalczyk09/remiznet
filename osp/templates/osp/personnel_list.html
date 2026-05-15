@@ -23,6 +23,22 @@
           <h2 class="wp-title">Ewidencja sił i środków osobowych</h2>
           <p class="wp-subtitle">Przegląd gotowości i kwalifikacji.</p>
         </div>
+        {% if is_president %}
+          <div class="wp-actions">
+            {% if unit %}
+              <a class="wp-btn wp-btn--primary" href="{% url 'osp:personnel_add' unit.pk %}">+ Dodaj siły/środki</a>
+            {% elif units %}
+              <div class="wp-dropdown">
+                <button class="wp-btn wp-btn--primary" id="add-personnel-btn">+ Dodaj siły/środki</button>
+                <div class="wp-dropdown-menu" id="unit-menu" style="display:none;">
+                  {% for u in units %}
+                    <a class="wp-dropdown-item" href="{% url 'osp:personnel_add' u.pk %}">{{ u.name }}</a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
       </div>
 
       <div class="wp-table-wrap" role="region" aria-label="Ewidencja sił i środków osobowych">
@@ -54,4 +70,21 @@
     </section>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const addBtn = document.getElementById('add-personnel-btn');
+    const unitMenu = document.getElementById('unit-menu');
+    if (addBtn && unitMenu) {
+      addBtn.addEventListener('click', function () {
+        unitMenu.style.display = unitMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.wp-dropdown')) {
+          unitMenu.style.display = 'none';
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}

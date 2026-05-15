@@ -26,6 +26,16 @@
         </div>
         <div class="wp-actions">
           <a class="wp-btn" href="{% url 'osp:rescue_monthly_report' %}">Raport miesięczny</a>
+          {% if is_president and units %}
+            <div class="wp-dropdown">
+              <button class="wp-btn wp-btn--primary" id="add-operation-btn">+ Nowe działanie</button>
+              <div class="wp-dropdown-menu" id="unit-menu" style="display:none;">
+                {% for u in units %}
+                  <a class="wp-dropdown-item" href="{% url 'osp:rescue_operation_create' u.pk %}">{{ u.name }}</a>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
         </div>
       </div>
 
@@ -73,6 +83,19 @@
     if (sidebar && toggle) {
       toggle.addEventListener('click', function () {
         sidebar.classList.toggle('active');
+      });
+    }
+
+    const addBtn = document.getElementById('add-operation-btn');
+    const unitMenu = document.getElementById('unit-menu');
+    if (addBtn && unitMenu) {
+      addBtn.addEventListener('click', function () {
+        unitMenu.style.display = unitMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.wp-dropdown')) {
+          unitMenu.style.display = 'none';
+        }
       });
     }
   });

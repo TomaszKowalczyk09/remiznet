@@ -23,6 +23,22 @@
           <h2 class="wp-title">Ewidencja sprzętu SiS</h2>
           <p class="wp-subtitle">Przegląd zasobów sprzętowych.</p>
         </div>
+        {% if is_president %}
+          <div class="wp-actions">
+            {% if unit %}
+              <a class="wp-btn wp-btn--primary" href="{% url 'osp:equipment_add' unit.pk %}">+ Dodaj sprzęt</a>
+            {% elif units %}
+              <div class="wp-dropdown">
+                <button class="wp-btn wp-btn--primary" id="add-equipment-btn">+ Dodaj sprzęt</button>
+                <div class="wp-dropdown-menu" id="unit-menu" style="display:none;">
+                  {% for u in units %}
+                    <a class="wp-dropdown-item" href="{% url 'osp:equipment_add' u.pk %}">{{ u.name }}</a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
       </div>
 
       <div class="wp-table-wrap" role="region" aria-label="Ewidencja sprzętu SiS">
@@ -56,4 +72,21 @@
     </section>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const addBtn = document.getElementById('add-equipment-btn');
+    const unitMenu = document.getElementById('unit-menu');
+    if (addBtn && unitMenu) {
+      addBtn.addEventListener('click', function () {
+        unitMenu.style.display = unitMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.wp-dropdown')) {
+          unitMenu.style.display = 'none';
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
