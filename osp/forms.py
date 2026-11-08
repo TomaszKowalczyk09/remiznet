@@ -78,6 +78,11 @@ class FirefighterForm(forms.ModelForm):
         pesel = self.cleaned_data['pesel']
         if not pesel.isdigit() or len(pesel) != 11:
             raise forms.ValidationError("PESEL musi mieć 11 cyfr.")
+        existing = Firefighter.objects.filter(pesel=pesel)
+        if self.instance.pk:
+            existing = existing.exclude(pk=self.instance.pk)
+        if existing.exists():
+            raise forms.ValidationError("Strażak z tym numerem PESEL już istnieje.")
         return pesel
 
 
@@ -216,6 +221,14 @@ class RescueFinalReportForm(forms.ModelForm):
             'closed_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        closed_at = cleaned_data.get('closed_at')
+        occurred_at = getattr(self.instance, 'occurred_at', None)
+        if closed_at and occurred_at and closed_at < occurred_at:
+            self.add_error('closed_at', 'Data zakończenia nie może być wcześniejsza niż data zgłoszenia.')
+        return cleaned_data
+
 
 class RescueArchiveForm(forms.Form):
     confirm = forms.BooleanField(label='Potwierdzam archiwizację działania', required=True)
@@ -240,6 +253,14 @@ class OSPReportForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 3}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('report_start_date')
+        end = cleaned_data.get('report_end_date')
+        if start and end and start > end:
+            self.add_error('report_end_date', 'Data zakończenia okresu nie może być wcześniejsza niż data rozpoczęcia.')
+        return cleaned_data
+
 
 class FuelUsageForm(forms.ModelForm):
     class Meta:
@@ -260,12 +281,25 @@ class FuelUsageForm(forms.ModelForm):
             'odometer_reading': forms.NumberInput(attrs={'min': '0'}),
         }
 
-    def __init__(self, *args, unit=None, **kwargs):
+    def __init__(self, *args, unit=None, report=None, **kwargs):
+        self.report = report
         super().__init__(*args, **kwargs)
         if unit is not None:
             self.fields['equipment'].queryset = Equipment.objects.filter(unit=unit).order_by('name')
         else:
             self.fields['equipment'].queryset = Equipment.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fuel_date = cleaned_data.get('date')
+        if self.report and fuel_date:
+            if not (self.report.report_start_date <= fuel_date <= self.report.report_end_date):
+                self.add_error('date', 'Data tankowania musi mieścić się w okresie raportu.')
+        for field in ('liters', 'unit_price'):
+            value = cleaned_data.get(field)
+            if value is not None and value <= 0:
+                self.add_error(field, 'Wartość musi być większa od zera.')
+        return cleaned_data
 
 
 class VehicleInsuranceForm(forms.ModelForm):
@@ -298,6 +332,17 @@ class VehicleInsuranceForm(forms.ModelForm):
         else:
             self.fields['equipment'].queryset = Equipment.objects.none()
 
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('policy_start_date')
+        end = cleaned_data.get('policy_end_date')
+        if start and end and end < start:
+            self.add_error('policy_end_date', 'Data końca polisy nie może być wcześniejsza niż data początku.')
+        premium = cleaned_data.get('premium_amount')
+        if premium is not None and premium < 0:
+            self.add_error('premium_amount', 'Składka nie może być ujemna.')
+        return cleaned_data
+
 
 class FirefighterTestForm(forms.ModelForm):
     class Meta:
@@ -319,13 +364,22 @@ class FirefighterTestForm(forms.ModelForm):
             'expiration_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        test_date = cleaned_data.get('test_date')
+        expiration = cleaned_data.get('expiration_date')
+        if test_date and expiration and expiration < test_date:
+            self.add_error('expiration_date', 'Data wygaśnięcia nie może być wcześniejsza niż data badania.')
+        return cleaned_data
+
 
 class EquipmentMaintenanceForm(forms.ModelForm):
     class Meta:
         model = EquipmentMaintenance
-        fields = ['maintenance_type', 'status', 'scheduled_date', 'completed_date',
+        fields = ['equipment', 'maintenance_type', 'status', 'scheduled_date', 'completed_date',
                   'description', 'technician', 'cost', 'notes']
         labels = {
+            'equipment': 'Sprzęt',
             'maintenance_type': 'Rodzaj serwisu',
             'status': 'Status',
             'scheduled_date': 'Data zaplanowana',
@@ -341,6 +395,24 @@ class EquipmentMaintenanceForm(forms.ModelForm):
             'cost': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+
+    def __init__(self, *args, unit=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if unit is not None:
+            self.fields['equipment'].queryset = Equipment.objects.filter(unit=unit).order_by('name')
+        else:
+            self.fields['equipment'].queryset = Equipment.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        scheduled = cleaned_data.get('scheduled_date')
+        completed = cleaned_data.get('completed_date')
+        if scheduled and completed and completed < scheduled:
+            self.add_error('completed_date', 'Data wykonania nie może być wcześniejsza niż data zaplanowana.')
+        cost = cleaned_data.get('cost')
+        if cost is not None and cost < 0:
+            self.add_error('cost', 'Koszt nie może być ujemny.')
+        return cleaned_data
 
 
 class TrainingRecordForm(forms.ModelForm):
@@ -363,6 +435,17 @@ class TrainingRecordForm(forms.ModelForm):
             'certification_expiration': forms.DateInput(attrs={'type': 'date'}),
             'duration_hours': forms.NumberInput(attrs={'min': '0'}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        training_date = cleaned_data.get('training_date')
+        expiration = cleaned_data.get('certification_expiration')
+        if training_date and expiration and expiration < training_date:
+            self.add_error('certification_expiration', 'Data ważności certyfikatu nie może być wcześniejsza niż data szkolenia.')
+        hours = cleaned_data.get('duration_hours')
+        if hours is not None and hours < 0:
+            self.add_error('duration_hours', 'Liczba godzin nie może być ujemna.')
+        return cleaned_data
 
 
 class FuelUsageInlineForm(forms.ModelForm):

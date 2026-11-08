@@ -1,0 +1,42 @@
+{% extends 'osp/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">{{ title }}</span>
+    </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    {% include 'osp/_sidebar.html' with sidebar_active=sidebar_active %}
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">{{ title }}</h2>
+          <p class="wp-subtitle">Ta operacja jest nieodwracalna.</p>
+        </div>
+      </div>
+
+      <section class="wp-card">
+        <p>Czy na pewno chcesz usunąć: <strong>{{ object }}</strong>?</p>
+        <form method="post" class="wp-form">
+          {% csrf_token %}
+          <div class="wp-form-actions">
+            <button class="wp-btn wp-btn--danger" type="submit">Usuń</button>
+            <a class="wp-btn" href="{{ cancel_url }}">Anuluj</a>
+          </div>
+        </form>
+      </section>
+    </section>
+  </div>
+</div>
+{% endblock %}

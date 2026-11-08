@@ -173,10 +173,12 @@ class PersonnelResource(models.Model):
 class SisAuditLog(models.Model):
     EVENT_RESOURCE_UPDATE = 'RESOURCE_UPDATE'
     EVENT_REQUEST_FLOW = 'REQUEST_FLOW'
+    EVENT_REPORT_FLOW = 'REPORT_FLOW'
 
     EVENT_CHOICES = [
         (EVENT_RESOURCE_UPDATE, 'Zmiana zasobów SiS'),
         (EVENT_REQUEST_FLOW, 'Zmiana obiegu KSRG'),
+        (EVENT_REPORT_FLOW, 'Obieg raportów OSP'),
     ]
 
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='sis_audit_logs')

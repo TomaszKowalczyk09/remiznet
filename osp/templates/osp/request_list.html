@@ -24,6 +24,17 @@
           <p class="wp-subtitle">Lista wszystkich wniosków.</p>
         </div>
       </div>
+      <form method="get" class="wp-search">
+        <input type="search" name="q" value="{{ q }}" placeholder="Szukaj: tytuł, opis">
+        <select name="status">
+          <option value="">Wszystkie statusy</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}"{% if status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button class="wp-btn" type="submit">Filtruj</button>
+      </form>
+
       <div class="wp-table-wrap" role="region" aria-label="Lista wniosków">
         <table class="wp-table">
           <thead>
@@ -44,6 +55,10 @@
                 <td>{{ r.get_status_display }}</td>
                 <td class="wp-td-right">
                   <a class="wp-btn" href="{% url 'osp:request_detail' r.pk %}">Otwórz</a>
+                  {% if r.status == 'DRAFT' and r.created_by == request.user %}
+                    <a class="wp-btn" href="{% url 'osp:request_edit' r.pk %}">Edytuj</a>
+                    <a class="wp-btn wp-btn--danger" href="{% url 'osp:request_delete' r.pk %}">Usuń</a>
+                  {% endif %}
                 </td>
               </tr>
             {% empty %}
@@ -52,6 +67,7 @@
           </tbody>
         </table>
       </div>
+      {% include 'osp/_pagination.html' %}
     </section>
   </div>
 </div>

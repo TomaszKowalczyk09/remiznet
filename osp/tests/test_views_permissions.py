@@ -20,7 +20,7 @@ class OspViewsTest(TestCase):
         self.official.groups.add(self.off_group)
         self.other = User.objects.create_user('other', password='pass')
         # unit
-        self.unit = Unit.objects.create(name='OSP Test')
+        self.unit = Unit.objects.create(name='OSP Test', president=self.president)
         self.client = Client()
 
     def test_happy_path_request_flow(self):
@@ -211,6 +211,7 @@ class OspViewsTest(TestCase):
         self.assertEqual(operation.messages.first().sender_type, 'PSP')
 
     def test_full_rescue_flow_finalize_and_archive(self):
+        occurred_at = timezone.now() - timezone.timedelta(hours=2)
         operation = RescueOperation.objects.create(
             unit=self.unit,
             created_by=self.president,
@@ -218,14 +219,17 @@ class OspViewsTest(TestCase):
             incident_type='Miejscowe zagrożenie',
             location='OSP Test 12',
             description='Wypompowanie wody.',
-            occurred_at=timezone.now(),
+            occurred_at=occurred_at,
             status=RescueOperation.STATUS_IN_PROGRESS,
         )
 
         self.client.login(username='off', password='pass')
         finalize_resp = self.client.post(
             reverse('osp:rescue_operation_finalize', args=[operation.pk]),
-            {'final_report': 'Działania zakończone, miejsce przekazano właścicielowi.', 'closed_at': '2026-04-03T11:30'},
+            {
+                'final_report': 'Działania zakończone, miejsce przekazano właścicielowi.',
+                'closed_at': timezone.localtime().strftime('%Y-%m-%dT%H:%M'),
+            },
         )
         self.assertEqual(finalize_resp.status_code, 302)
 

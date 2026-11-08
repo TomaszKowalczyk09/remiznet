@@ -120,6 +120,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Email (console backend in development; configure SMTP in production)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'remiznet@gminagryfino.pl'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/osp/panel/'

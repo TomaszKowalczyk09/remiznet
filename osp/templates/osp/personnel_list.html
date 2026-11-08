@@ -41,6 +41,11 @@
         {% endif %}
       </div>
 
+      <form method="get" class="wp-search">
+        <input type="search" name="q" value="{{ q }}" placeholder="Szukaj: rola, kwalifikacje, strażak">
+        <button class="wp-btn" type="submit">Szukaj</button>
+      </form>
+
       <div class="wp-table-wrap" role="region" aria-label="Ewidencja sił i środków osobowych">
         <table class="wp-table">
           <thead>
@@ -50,6 +55,7 @@
               <th>Rola</th>
               <th>Gotowość</th>
               <th>Kwalifikacje</th>
+              <th>Akcje</th>
             </tr>
           </thead>
           <tbody>
@@ -60,13 +66,20 @@
                 <td class="wp-td-strong">{{ personnel.role_name }}</td>
                 <td>{{ personnel.get_readiness_display }}</td>
                 <td>{{ personnel.qualifications|default:'-' }}</td>
+                <td class="wp-td-right">
+                  {% if is_president %}
+                    <a class="wp-btn" href="{% url 'osp:personnel_edit' personnel.pk %}">Edytuj</a>
+                    <a class="wp-btn wp-btn--danger" href="{% url 'osp:personnel_delete' personnel.pk %}">Usuń</a>
+                  {% endif %}
+                </td>
               </tr>
             {% empty %}
-              <tr><td colspan="5">Brak pozycji osobowych.</td></tr>
+              <tr><td colspan="6">Brak pozycji osobowych.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+      {% include 'osp/_pagination.html' %}
     </section>
   </div>
 </div>

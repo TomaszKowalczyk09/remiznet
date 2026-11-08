@@ -1,5 +1,7 @@
-asgiref==3.11.1
-Django==6.0.2
-sqlparse==0.5.5
-tzdata==2025.3
-reportlab==4.4.4
+asgiref==3.13.0
+Django==6.0.8
+sqlparse==0.6.1
+tzdata==2026.6
+reportlab==5.1.0
+gunicorn==23.0.0
+waitress==3.0.2

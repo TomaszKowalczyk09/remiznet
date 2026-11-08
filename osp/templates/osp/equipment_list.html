@@ -41,6 +41,11 @@
         {% endif %}
       </div>
 
+      <form method="get" class="wp-search">
+        <input type="search" name="q" value="{{ q }}" placeholder="Szukaj: nazwa, kategoria, nr inwentarzowy">
+        <button class="wp-btn" type="submit">Szukaj</button>
+      </form>
+
       <div class="wp-table-wrap" role="region" aria-label="Ewidencja sprzętu SiS">
         <table class="wp-table">
           <thead>
@@ -51,6 +56,7 @@
               <th>Nr inwentarzowy</th>
               <th>Stan</th>
               <th>Przegląd ważny do</th>
+              <th>Akcje</th>
             </tr>
           </thead>
           <tbody>
@@ -62,13 +68,21 @@
                 <td>{{ equipment.inventory_number }}</td>
                 <td>{{ equipment.get_condition_display }}</td>
                 <td>{{ equipment.inspection_valid_until|date:'Y-m-d'|default:'-' }}</td>
+                <td class="wp-td-right">
+                  {% if is_president %}
+                    <a class="wp-btn" href="{% url 'osp:equipment_edit' equipment.pk %}">Edytuj</a>
+                    <a class="wp-btn wp-btn--danger" href="{% url 'osp:equipment_delete' equipment.pk %}">Usuń</a>
+                  {% endif %}
+                  <a class="wp-btn" href="{% url 'osp:equipment_maintenance_list' equipment.unit_id %}">Serwisy</a>
+                </td>
               </tr>
             {% empty %}
-              <tr><td colspan="6">Brak pozycji sprzętowych.</td></tr>
+              <tr><td colspan="7">Brak pozycji sprzętowych.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+      {% include 'osp/_pagination.html' %}
     </section>
   </div>
 </div>

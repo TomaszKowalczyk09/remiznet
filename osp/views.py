@@ -1,12 +1,16 @@
 import csv
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import Font
 from reportlab.pdfbase.ttfonts import TTFont
@@ -51,6 +55,7 @@ from .models import (
     EquipmentMaintenance,
     TrainingRecord,
 )
+from .notifications import notify_officials, notify_user
 
 
 def index(request):
@@ -76,6 +81,18 @@ def president_units(user):
     return Unit.objects.filter(
         Q(president=user) | Q(firefighters__created_by=user)
     ).distinct()
+
+
+def can_manage_unit(user, unit):
+    return is_president(user) and president_units(user).filter(pk=unit.pk).exists()
+
+
+def can_manage_firefighter(user, firefighter):
+    return is_official(user) or can_manage_unit(user, firefighter.unit)
+
+
+def paginate(request, queryset, per_page=25):
+    return Paginator(queryset, per_page).get_page(request.GET.get('page'))
 
 
 def log_sis_event(unit, actor, event_type, message, req=None):
@@ -104,33 +121,64 @@ def log_rescue_event(operation, actor, event_type, message):
     )
 
 
+def _font_search_dirs():
+    candidates = [
+        Path('C:/Windows/Fonts'),
+        Path.home() / 'AppData' / 'Local' / 'Microsoft' / 'Windows' / 'Fonts',
+        Path('/usr/share/fonts'),
+        Path('/usr/local/share/fonts'),
+        Path('/Library/Fonts'),
+        Path('/System/Library/Fonts'),
+        Path.home() / '.fonts',
+        Path.home() / '.local' / 'share' / 'fonts',
+    ]
+    return [directory for directory in candidates if directory.exists()]
+
+
+def _find_font_file(filenames):
+    for directory in _font_search_dirs():
+        for filename in filenames:
+            direct = directory / filename
+            if direct.is_file():
+                return direct
+            for candidate in directory.rglob(filename):
+                if candidate.is_file():
+                    return candidate
+    return None
+
+
 def _register_helvetica_neue_fonts():
-    font_dir = Path.home() / 'AppData' / 'Local' / 'Microsoft' / 'Windows' / 'Fonts'
     font_map = {
-        'HelveticaNeue': 'HelveticaNeueRoman.otf',
-        'HelveticaNeue-Bold': 'HelveticaNeueBold.otf',
-        'HelveticaNeue-Italic': 'HelveticaNeueItalic.ttf',
-        'HelveticaNeue-BoldItalic': 'HelveticaNeueBoldItalic.otf',
+        'HelveticaNeue': (
+            ['HelveticaNeueRoman.otf', 'HelveticaNeue.ttf', 'Arial.ttf', 'LiberationSans-Regular.ttf', 'DejaVuSans.ttf'],
+            'Helvetica',
+        ),
+        'HelveticaNeue-Bold': (
+            ['HelveticaNeueBold.otf', 'HelveticaNeue-Bold.ttf', 'Arial Bold.ttf', 'LiberationSans-Bold.ttf', 'DejaVuSans-Bold.ttf'],
+            'Helvetica-Bold',
+        ),
+        'HelveticaNeue-Italic': (
+            ['HelveticaNeueItalic.ttf', 'Arial Italic.ttf', 'LiberationSans-Italic.ttf', 'DejaVuSans-Oblique.ttf'],
+            'Helvetica-Oblique',
+        ),
+        'HelveticaNeue-BoldItalic': (
+            ['HelveticaNeueBoldItalic.otf', 'Arial Bold Italic.ttf', 'LiberationSans-BoldItalic.ttf', 'DejaVuSans-BoldOblique.ttf'],
+            'Helvetica-BoldOblique',
+        ),
     }
 
-    for font_name, filename in font_map.items():
-        font_path = font_dir / filename
+    for font_name, (filenames, base_font) in font_map.items():
         if font_name in pdfmetrics.getRegisteredFontNames():
             continue
 
-        if font_path.exists() and font_path.suffix.lower() in {'.ttf', '.ttc'}:
+        font_path = _find_font_file(filenames)
+        if font_path and font_path.suffix.lower() in {'.ttf', '.ttc'}:
             try:
                 pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
                 continue
             except Exception:
                 pass
 
-        base_font = {
-            'HelveticaNeue': 'Helvetica',
-            'HelveticaNeue-Bold': 'Helvetica-Bold',
-            'HelveticaNeue-Italic': 'Helvetica-Oblique',
-            'HelveticaNeue-BoldItalic': 'Helvetica-BoldOblique',
-        }[font_name]
         pdfmetrics.registerFont(Font(font_name, base_font, 'WinAnsiEncoding'))
 
 
@@ -156,7 +204,7 @@ def _set_pdf_fonts(text_object):
 def firefighter_list(request, unit_pk=None):
     user = request.user
     context = {'is_president': is_president(user)}
-    
+
     if is_official(user):
         if unit_pk:
             unit = get_object_or_404(Unit, pk=unit_pk)
@@ -175,7 +223,20 @@ def firefighter_list(request, unit_pk=None):
             firefighters = Firefighter.objects.filter(unit__in=units)
     else:
         return HttpResponseForbidden('Brak dostępu')
-    context['firefighters'] = firefighters
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        firefighters = firefighters.filter(
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(pesel__icontains=query)
+            | Q(email__icontains=query)
+            | Q(phone__icontains=query)
+        )
+    page_obj = paginate(request, firefighters.order_by('last_name', 'first_name'))
+    context['firefighters'] = page_obj
+    context['page_obj'] = page_obj
+    context['q'] = query
     return render(request, 'osp/firefighter_list.html', context)
 
 
@@ -183,7 +244,7 @@ def firefighter_list(request, unit_pk=None):
 def equipment_list(request, unit_pk=None):
     user = request.user
     context = {'is_president': is_president(user)}
-    
+
     if is_official(user):
         if unit_pk:
             unit = get_object_or_404(Unit, pk=unit_pk)
@@ -202,15 +263,26 @@ def equipment_list(request, unit_pk=None):
             equipment = Equipment.objects.filter(unit__in=units)
     else:
         return HttpResponseForbidden('Brak dostępu')
-    context['equipment_list'] = equipment
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        equipment = equipment.filter(
+            Q(name__icontains=query)
+            | Q(category__icontains=query)
+            | Q(inventory_number__icontains=query)
+        )
+    page_obj = paginate(request, equipment.order_by('name'))
+    context['equipment_list'] = page_obj
+    context['page_obj'] = page_obj
+    context['q'] = query
     return render(request, 'osp/equipment_list.html', context)
 
 
 @login_required
 def equipment_create(request, unit_pk):
     unit = get_object_or_404(Unit, pk=unit_pk)
-    if not is_president(request.user):
-        return HttpResponseForbidden('Tylko prezes może dodać sprzęt')
+    if not can_manage_unit(request.user, unit):
+        return HttpResponseForbidden('Tylko prezes tej jednostki może dodać sprzęt')
 
     if request.method == 'POST':
         form = EquipmentForm(request.POST)
@@ -255,15 +327,27 @@ def personnel_list(request, unit_pk=None):
             personnel = PersonnelResource.objects.filter(unit__in=units)
     else:
         return HttpResponseForbidden('Brak dostępu')
-    context['personnel_list'] = personnel
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        personnel = personnel.filter(
+            Q(role_name__icontains=query)
+            | Q(qualifications__icontains=query)
+            | Q(firefighter__first_name__icontains=query)
+            | Q(firefighter__last_name__icontains=query)
+        )
+    page_obj = paginate(request, personnel.order_by('role_name'))
+    context['personnel_list'] = page_obj
+    context['page_obj'] = page_obj
+    context['q'] = query
     return render(request, 'osp/personnel_list.html', context)
 
 
 @login_required
 def personnel_create(request, unit_pk):
     unit = get_object_or_404(Unit, pk=unit_pk)
-    if not is_president(request.user):
-        return HttpResponseForbidden('Tylko prezes może dodać siły i środki osobowe')
+    if not can_manage_unit(request.user, unit):
+        return HttpResponseForbidden('Tylko prezes tej jednostki może dodać siły i środki osobowe')
 
     if request.method == 'POST':
         form = PersonnelResourceForm(request.POST, unit=unit)
@@ -287,8 +371,8 @@ def personnel_create(request, unit_pk):
 @login_required
 def firefighter_create(request, unit_pk):
     unit = get_object_or_404(Unit, pk=unit_pk)
-    if not is_president(request.user):
-        return HttpResponseForbidden('Tylko prezes może dodać strażaka')
+    if not can_manage_unit(request.user, unit):
+        return HttpResponseForbidden('Tylko prezes tej jednostki może dodać strażaka')
 
     if request.method == 'POST':
         form = FirefighterForm(request.POST)
@@ -332,8 +416,8 @@ def firefighter_edit(request, pk):
 @login_required
 def request_create(request, unit_pk):
     unit = get_object_or_404(Unit, pk=unit_pk)
-    if not is_president(request.user):
-        return HttpResponseForbidden('Tylko prezes może tworzyć wnioski')
+    if not can_manage_unit(request.user, unit):
+        return HttpResponseForbidden('Tylko prezes tej jednostki może tworzyć wnioski')
 
     if request.method == 'POST':
         form = RequestForm(request.POST, unit=unit)
@@ -363,12 +447,26 @@ def request_list(request):
     if is_official(request.user):
         qs = Request.objects.filter(
             status__in=[Request.STATUS_SUBMITTED, Request.STATUS_ACCEPTED, Request.STATUS_REJECTED]
-        ).order_by('-updated_at')
+        )
     elif is_president(request.user):
-        qs = Request.objects.filter(created_by=request.user).order_by('-updated_at')
+        qs = Request.objects.filter(created_by=request.user)
     else:
         return HttpResponseForbidden('Brak uprawnień')
-    return render(request, 'osp/request_list.html', {'requests': qs})
+
+    status = request.GET.get('status', '').strip()
+    if status in dict(Request.STATUS_CHOICES):
+        qs = qs.filter(status=status)
+    query = request.GET.get('q', '').strip()
+    if query:
+        qs = qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
+    page_obj = paginate(request, qs.order_by('-updated_at'))
+    return render(request, 'osp/request_list.html', {
+        'requests': page_obj,
+        'page_obj': page_obj,
+        'q': query,
+        'status': status,
+        'status_choices': Request.STATUS_CHOICES,
+    })
 
 
 @login_required
@@ -619,22 +717,37 @@ def rescue_operation_list(request):
     context = {'is_president': is_president(request.user)}
     
     if is_official(request.user):
-        operations = RescueOperation.objects.select_related('unit', 'created_by').order_by('-updated_at')
+        operations = RescueOperation.objects.select_related('unit', 'created_by')
     elif is_president(request.user):
-        operations = RescueOperation.objects.select_related('unit', 'created_by').filter(created_by=request.user).order_by('-updated_at')
+        operations = RescueOperation.objects.select_related('unit', 'created_by').filter(created_by=request.user)
         context['units'] = president_units(request.user)
     else:
         return HttpResponseForbidden('Brak uprawnień')
 
-    context['operations'] = operations
+    status = request.GET.get('status', '').strip()
+    if status in dict(RescueOperation.STATUS_CHOICES):
+        operations = operations.filter(status=status)
+    query = request.GET.get('q', '').strip()
+    if query:
+        operations = operations.filter(
+            Q(title__icontains=query)
+            | Q(location__icontains=query)
+            | Q(incident_type__icontains=query)
+        )
+    page_obj = paginate(request, operations.order_by('-updated_at'))
+    context['operations'] = page_obj
+    context['page_obj'] = page_obj
+    context['q'] = query
+    context['status'] = status
+    context['status_choices'] = RescueOperation.STATUS_CHOICES
     return render(request, 'osp/rescue_operation_list.html', context)
 
 
 @login_required
 def rescue_operation_create(request, unit_pk):
     unit = get_object_or_404(Unit, pk=unit_pk)
-    if not is_president(request.user):
-        return HttpResponseForbidden('Tylko prezes może zarejestrować działanie ratownicze')
+    if not can_manage_unit(request.user, unit):
+        return HttpResponseForbidden('Tylko prezes tej jednostki może zarejestrować działanie ratownicze')
 
     if request.method == 'POST':
         form = RescueOperationForm(request.POST)
@@ -902,6 +1015,18 @@ def rescue_operation_report_pdf(request, pk):
     return response
 
 
+def _get_year_month(request):
+    now = timezone.localtime()
+    try:
+        year = int(request.GET.get('year', now.year))
+        month = int(request.GET.get('month', now.month))
+    except (TypeError, ValueError):
+        return None, None, HttpResponseBadRequest('Nieprawidłowy rok lub miesiąc')
+    if not (2000 <= year <= 2100) or not (1 <= month <= 12):
+        return None, None, HttpResponseBadRequest('Nieprawidłowy rok lub miesiąc')
+    return year, month, None
+
+
 def _monthly_rescue_queryset(user, year, month):
     start = timezone.datetime(year=year, month=month, day=1, tzinfo=timezone.get_current_timezone())
     if month == 12:
@@ -909,7 +1034,7 @@ def _monthly_rescue_queryset(user, year, month):
     else:
         end = timezone.datetime(year=year, month=month + 1, day=1, tzinfo=timezone.get_current_timezone())
 
-    queryset = RescueOperation.objects.select_related('unit', 'created_by').filter(created_at__gte=start, created_at__lt=end)
+    queryset = RescueOperation.objects.select_related('unit', 'created_by').filter(occurred_at__gte=start, occurred_at__lt=end)
     if is_official(user):
         return queryset
     if is_president(user):
@@ -932,10 +1057,10 @@ def rescue_monthly_report(request):
     if not (is_official(request.user) or is_president(request.user)):
         return HttpResponseForbidden('Brak uprawnień')
 
-    now = timezone.localtime()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
-    operations = list(_monthly_rescue_queryset(request.user, year, month).order_by('-created_at'))
+    year, month, error = _get_year_month(request)
+    if error:
+        return error
+    operations = list(_monthly_rescue_queryset(request.user, year, month).order_by('-occurred_at'))
 
     reaction_values = []
     close_values = []
@@ -973,10 +1098,10 @@ def rescue_monthly_report_csv(request):
     if not (is_official(request.user) or is_president(request.user)):
         return HttpResponseForbidden('Brak uprawnień')
 
-    now = timezone.localtime()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
-    operations = _monthly_rescue_queryset(request.user, year, month).order_by('-created_at')
+    year, month, error = _get_year_month(request)
+    if error:
+        return error
+    operations = _monthly_rescue_queryset(request.user, year, month).order_by('-occurred_at')
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="raport-miesieczny-{year}-{month:02d}.csv"'
@@ -1004,10 +1129,10 @@ def rescue_monthly_report_pdf(request):
     if not (is_official(request.user) or is_president(request.user)):
         return HttpResponseForbidden('Brak uprawnień')
 
-    now = timezone.localtime()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
-    operations = _monthly_rescue_queryset(request.user, year, month).order_by('-created_at')
+    year, month, error = _get_year_month(request)
+    if error:
+        return error
+    operations = _monthly_rescue_queryset(request.user, year, month).order_by('-occurred_at')
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="raport-miesieczny-{year}-{month:02d}.pdf"'
@@ -1072,16 +1197,30 @@ def osp_report_list(request, unit_pk=None):
             reports = reports.filter(unit=unit)
     else:
         return HttpResponseForbidden('Brak dostępu')
-    
-    return render(request, 'osp/osp_report_list.html', {'reports': reports, 'unit_pk': unit_pk})
+
+    status = request.GET.get('status', '').strip()
+    if status in dict(OSPReport.STATUS_CHOICES):
+        reports = reports.filter(status=status)
+    query = request.GET.get('q', '').strip()
+    if query:
+        reports = reports.filter(Q(title__icontains=query) | Q(description__icontains=query))
+    page_obj = paginate(request, reports)
+    return render(request, 'osp/osp_report_list.html', {
+        'reports': page_obj,
+        'page_obj': page_obj,
+        'unit_pk': unit_pk,
+        'q': query,
+        'status': status,
+        'status_choices': OSPReport.STATUS_CHOICES,
+    })
 
 
 @login_required
 def osp_report_create(request, unit_pk):
     """Create a new OSP report."""
     unit = get_object_or_404(Unit, pk=unit_pk)
-    if not is_president(request.user):
-        return HttpResponseForbidden('Tylko prezes może tworzyć raporty')
+    if not can_manage_unit(request.user, unit):
+        return HttpResponseForbidden('Tylko prezes tej jednostki może tworzyć raporty')
 
     if request.method == 'POST':
         form = OSPReportForm(request.POST)
@@ -1158,7 +1297,7 @@ def fuel_usage_add(request, report_pk):
         return HttpResponseForbidden('Brak dostępu')
 
     if request.method == 'POST':
-        form = FuelUsageForm(request.POST, unit=report.unit)
+        form = FuelUsageForm(request.POST, unit=report.unit, report=report)
         if form.is_valid():
             fuel = form.save(commit=False)
             fuel.report = report
@@ -1166,7 +1305,7 @@ def fuel_usage_add(request, report_pk):
             fuel.save()
             return redirect('osp:osp_report_detail', pk=report.pk)
     else:
-        form = FuelUsageForm(unit=report.unit)
+        form = FuelUsageForm(unit=report.unit, report=report)
     
     return render(request, 'osp/fuel_usage_form.html', {'form': form, 'report': report})
 
@@ -1206,10 +1345,15 @@ def vehicle_insurance_list(request, unit_pk):
         return HttpResponseForbidden('Brak dostępu')
     
     insurance_list = VehicleInsurance.objects.filter(unit=unit).select_related('equipment')
-    
+    today = timezone.localdate()
+
     return render(request, 'osp/vehicle_insurance_list.html', {
         'insurance_list': insurance_list,
         'unit': unit,
+        'today': today,
+        'soon': today + timedelta(days=60),
+        'is_president': is_president(user),
+        'is_official': is_official(user),
     })
 
 
@@ -1279,30 +1423,103 @@ def training_record_list(request, firefighter_pk):
         return HttpResponseForbidden('Brak dostępu')
     
     training = TrainingRecord.objects.filter(firefighter=firefighter).order_by('-training_date')
-    
+
     return render(request, 'osp/training_record_list.html', {
         'training_list': training,
         'firefighter': firefighter,
+        'today': timezone.localdate(),
     })
 
 
 @login_required
+@require_POST
 def osp_report_submit(request, pk):
     """Submit report for approval."""
     report = get_object_or_404(OSPReport, pk=pk)
     user = request.user
-    
-    if not (is_president(user) and report.unit in president_units(user)):
+
+    if not can_manage_unit(user, report.unit):
         return HttpResponseForbidden('Brak dostępu')
-    
+
     if report.status != OSPReport.STATUS_DRAFT:
         return HttpResponseBadRequest('Raport musi być w stanie roboczym')
-    
+
     report.status = OSPReport.STATUS_SUBMITTED
     report.submitted_by = user
     report.submitted_at = timezone.now()
     report.save()
-    
+
+    log_sis_event(
+        report.unit,
+        user,
+        SisAuditLog.EVENT_REPORT_FLOW,
+        f'Złożono raport OSP #{report.pk} do akceptacji.',
+    )
+    notify_officials(
+        f'Raport OSP #{report.pk} do akceptacji',
+        f'Jednostka {report.unit.name} złożyła raport "{report.title}" do akceptacji.',
+    )
+
+    return redirect('osp:osp_report_detail', pk=report.pk)
+
+
+@login_required
+@require_POST
+def osp_report_approve(request, pk):
+    """Accept a submitted OSP report (official only)."""
+    report = get_object_or_404(OSPReport, pk=pk)
+    user = request.user
+
+    if not is_official(user):
+        return HttpResponseForbidden('Tylko urzędnik może zaakceptować raport')
+
+    if report.status != OSPReport.STATUS_SUBMITTED:
+        return HttpResponseBadRequest('Raport musi być złożony')
+
+    report.status = OSPReport.STATUS_ACCEPTED
+    report.approved_by = user
+    report.approved_at = timezone.now()
+    report.save()
+
+    log_sis_event(
+        report.unit,
+        user,
+        SisAuditLog.EVENT_REPORT_FLOW,
+        f'Zaakceptowano raport OSP #{report.pk}.',
+    )
+    notify_user(
+        report.created_by,
+        f'Raport OSP #{report.pk} zaakceptowany',
+        f'Raport "{report.title}" został zaakceptowany przez urzędnika.',
+    )
+
+    return redirect('osp:osp_report_detail', pk=report.pk)
+
+
+@login_required
+@require_POST
+def osp_report_archive(request, pk):
+    """Archive an accepted OSP report (official only)."""
+    report = get_object_or_404(OSPReport, pk=pk)
+    user = request.user
+
+    if not is_official(user):
+        return HttpResponseForbidden('Tylko urzędnik może archiwizować raport')
+
+    if report.status != OSPReport.STATUS_ACCEPTED:
+        return HttpResponseBadRequest('Raport musi być zaakceptowany')
+
+    report.status = OSPReport.STATUS_ARCHIVED
+    report.archived_at = timezone.now()
+    report.save()
+
+    log_sis_event(
+        report.unit,
+        user,
+        SisAuditLog.EVENT_REPORT_FLOW,
+        f'Zarchiwizowano raport OSP #{report.pk}.',
+    )
+
     return redirect('osp:osp_report_detail', pk=report.pk)
 
 
@@ -1365,6 +1582,391 @@ def osp_report_export_pdf(request, pk):
     pdf.save()
     
     return response
+
+
+# ==================== MAINTENANCE / TRAINING VIEWS ====================
+
+
+def _can_manage_maintenance(user, maintenance):
+    unit = maintenance.equipment.unit
+    return is_official(user) or can_manage_unit(user, unit)
+
+
+@login_required
+def equipment_maintenance_add(request, unit_pk):
+    unit = get_object_or_404(Unit, pk=unit_pk)
+    if not (is_official(request.user) or can_manage_unit(request.user, unit)):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = EquipmentMaintenanceForm(request.POST, unit=unit)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:equipment_maintenance_list', unit_pk=unit.pk)
+    else:
+        form = EquipmentMaintenanceForm(unit=unit)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Dodaj serwis sprzętu',
+        'cancel_url': reverse('osp:equipment_maintenance_list', args=[unit.pk]),
+    })
+
+
+@login_required
+def equipment_maintenance_edit(request, pk):
+    maintenance = get_object_or_404(EquipmentMaintenance.objects.select_related('equipment__unit'), pk=pk)
+    if not _can_manage_maintenance(request.user, maintenance):
+        return HttpResponseForbidden('Brak dostępu')
+    unit = maintenance.equipment.unit
+
+    if request.method == 'POST':
+        form = EquipmentMaintenanceForm(request.POST, instance=maintenance, unit=unit)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:equipment_maintenance_list', unit_pk=unit.pk)
+    else:
+        form = EquipmentMaintenanceForm(instance=maintenance, unit=unit)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj serwis sprzętu',
+        'cancel_url': reverse('osp:equipment_maintenance_list', args=[unit.pk]),
+    })
+
+
+@login_required
+def equipment_maintenance_delete(request, pk):
+    maintenance = get_object_or_404(EquipmentMaintenance.objects.select_related('equipment__unit'), pk=pk)
+    if not _can_manage_maintenance(request.user, maintenance):
+        return HttpResponseForbidden('Brak dostępu')
+    unit = maintenance.equipment.unit
+
+    if request.method == 'POST':
+        maintenance.delete()
+        return redirect('osp:equipment_maintenance_list', unit_pk=unit.pk)
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': maintenance,
+        'title': 'Usuń serwis sprzętu',
+        'cancel_url': reverse('osp:equipment_maintenance_list', args=[unit.pk]),
+    })
+
+
+@login_required
+def training_record_add(request, firefighter_pk):
+    firefighter = get_object_or_404(Firefighter, pk=firefighter_pk)
+    if not can_manage_firefighter(request.user, firefighter):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = TrainingRecordForm(request.POST)
+        if form.is_valid():
+            training = form.save(commit=False)
+            training.firefighter = firefighter
+            training.save()
+            return redirect('osp:training_record_list', firefighter_pk=firefighter.pk)
+    else:
+        form = TrainingRecordForm()
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Dodaj szkolenie',
+        'cancel_url': reverse('osp:training_record_list', args=[firefighter.pk]),
+    })
+
+
+@login_required
+def training_record_edit(request, pk):
+    training = get_object_or_404(TrainingRecord.objects.select_related('firefighter__unit'), pk=pk)
+    if not can_manage_firefighter(request.user, training.firefighter):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = TrainingRecordForm(request.POST, instance=training)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:training_record_list', firefighter_pk=training.firefighter_id)
+    else:
+        form = TrainingRecordForm(instance=training)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj szkolenie',
+        'cancel_url': reverse('osp:training_record_list', args=[training.firefighter_id]),
+    })
+
+
+@login_required
+def training_record_delete(request, pk):
+    training = get_object_or_404(TrainingRecord.objects.select_related('firefighter__unit'), pk=pk)
+    if not can_manage_firefighter(request.user, training.firefighter):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        firefighter_pk = training.firefighter_id
+        training.delete()
+        return redirect('osp:training_record_list', firefighter_pk=firefighter_pk)
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': training,
+        'title': 'Usuń szkolenie',
+        'cancel_url': reverse('osp:training_record_list', args=[training.firefighter_id]),
+    })
+
+
+# ==================== EDIT / DELETE VIEWS ====================
+
+
+@login_required
+def fuel_usage_edit(request, pk):
+    fuel = get_object_or_404(FuelUsage.objects.select_related('report__unit'), pk=pk)
+    report = fuel.report
+    if not can_manage_unit(request.user, report.unit) or report.status != OSPReport.STATUS_DRAFT:
+        return HttpResponseForbidden('Nie możesz edytować tego tankowania')
+
+    if request.method == 'POST':
+        form = FuelUsageForm(request.POST, instance=fuel, unit=report.unit, report=report)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:osp_report_detail', pk=report.pk)
+    else:
+        form = FuelUsageForm(instance=fuel, unit=report.unit, report=report)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj tankowanie',
+        'cancel_url': reverse('osp:osp_report_detail', args=[report.pk]),
+    })
+
+
+@login_required
+def fuel_usage_delete(request, pk):
+    fuel = get_object_or_404(FuelUsage.objects.select_related('report__unit'), pk=pk)
+    report = fuel.report
+    if not can_manage_unit(request.user, report.unit) or report.status != OSPReport.STATUS_DRAFT:
+        return HttpResponseForbidden('Nie możesz usunąć tego tankowania')
+
+    if request.method == 'POST':
+        fuel.delete()
+        return redirect('osp:osp_report_detail', pk=report.pk)
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': fuel,
+        'title': 'Usuń tankowanie',
+        'cancel_url': reverse('osp:osp_report_detail', args=[report.pk]),
+    })
+
+
+@login_required
+def vehicle_insurance_edit(request, pk):
+    insurance = get_object_or_404(VehicleInsurance.objects.select_related('unit'), pk=pk)
+    if not (is_official(request.user) or can_manage_unit(request.user, insurance.unit)):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = VehicleInsuranceForm(request.POST, instance=insurance, unit=insurance.unit)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:vehicle_insurance_list', unit_pk=insurance.unit_id)
+    else:
+        form = VehicleInsuranceForm(instance=insurance, unit=insurance.unit)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj ubezpieczenie',
+        'cancel_url': reverse('osp:vehicle_insurance_list', args=[insurance.unit_id]),
+    })
+
+
+@login_required
+def vehicle_insurance_delete(request, pk):
+    insurance = get_object_or_404(VehicleInsurance.objects.select_related('unit'), pk=pk)
+    if not (is_official(request.user) or can_manage_unit(request.user, insurance.unit)):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        unit_pk = insurance.unit_id
+        insurance.delete()
+        return redirect('osp:vehicle_insurance_list', unit_pk=unit_pk)
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': insurance,
+        'title': 'Usuń ubezpieczenie',
+        'cancel_url': reverse('osp:vehicle_insurance_list', args=[insurance.unit_id]),
+    })
+
+
+@login_required
+def firefighter_test_edit(request, pk):
+    test = get_object_or_404(FirefighterTest.objects.select_related('firefighter__unit'), pk=pk)
+    if not can_manage_firefighter(request.user, test.firefighter):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = FirefighterTestForm(request.POST, instance=test)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:firefighter_edit', pk=test.firefighter_id)
+    else:
+        form = FirefighterTestForm(instance=test)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj badanie/certyfikat',
+        'cancel_url': reverse('osp:firefighter_edit', args=[test.firefighter_id]),
+    })
+
+
+@login_required
+def firefighter_test_delete(request, pk):
+    test = get_object_or_404(FirefighterTest.objects.select_related('firefighter__unit'), pk=pk)
+    if not can_manage_firefighter(request.user, test.firefighter):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        firefighter_pk = test.firefighter_id
+        test.delete()
+        return redirect('osp:firefighter_edit', pk=firefighter_pk)
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': test,
+        'title': 'Usuń badanie/certyfikat',
+        'cancel_url': reverse('osp:firefighter_edit', args=[test.firefighter_id]),
+    })
+
+
+@login_required
+def equipment_edit(request, pk):
+    equipment = get_object_or_404(Equipment.objects.select_related('unit'), pk=pk)
+    if not can_manage_unit(request.user, equipment.unit):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = EquipmentForm(request.POST, instance=equipment)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:equipment_list', unit_pk=equipment.unit_id)
+    else:
+        form = EquipmentForm(instance=equipment)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj sprzęt',
+        'cancel_url': reverse('osp:equipment_list', args=[equipment.unit_id]),
+    })
+
+
+@login_required
+def equipment_delete(request, pk):
+    equipment = get_object_or_404(Equipment.objects.select_related('unit'), pk=pk)
+    if not can_manage_unit(request.user, equipment.unit):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        unit_pk = equipment.unit_id
+        equipment.delete()
+        return redirect('osp:equipment_list', unit_pk=unit_pk)
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': equipment,
+        'title': 'Usuń sprzęt',
+        'cancel_url': reverse('osp:equipment_list', args=[equipment.unit_id]),
+    })
+
+
+@login_required
+def personnel_edit(request, pk):
+    personnel = get_object_or_404(PersonnelResource.objects.select_related('unit'), pk=pk)
+    if not can_manage_unit(request.user, personnel.unit):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        form = PersonnelResourceForm(request.POST, instance=personnel, unit=personnel.unit)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:personnel_list', unit_pk=personnel.unit_id)
+    else:
+        form = PersonnelResourceForm(instance=personnel, unit=personnel.unit)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj siły i środki osobowe',
+        'cancel_url': reverse('osp:personnel_list', args=[personnel.unit_id]),
+    })
+
+
+@login_required
+def personnel_delete(request, pk):
+    personnel = get_object_or_404(PersonnelResource.objects.select_related('unit'), pk=pk)
+    if not can_manage_unit(request.user, personnel.unit):
+        return HttpResponseForbidden('Brak dostępu')
+
+    if request.method == 'POST':
+        unit_pk = personnel.unit_id
+        personnel.delete()
+        return redirect('osp:personnel_list', unit_pk=unit_pk)
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': personnel,
+        'title': 'Usuń siły i środki osobowe',
+        'cancel_url': reverse('osp:personnel_list', args=[personnel.unit_id]),
+    })
+
+
+@login_required
+def request_edit(request, pk):
+    req = get_object_or_404(Request, pk=pk)
+    if req.created_by != request.user or req.status != Request.STATUS_DRAFT:
+        return HttpResponseForbidden('Możesz edytować tylko własne wnioski robocze')
+
+    if request.method == 'POST':
+        form = RequestForm(request.POST, instance=req, unit=req.unit)
+        if form.is_valid():
+            form.save()
+            return redirect('osp:request_detail', pk=req.pk)
+    else:
+        form = RequestForm(instance=req, unit=req.unit)
+
+    return render(request, 'osp/form_page.html', {
+        'form': form,
+        'title': 'Edytuj wniosek',
+        'cancel_url': reverse('osp:request_detail', args=[req.pk]),
+    })
+
+
+@login_required
+def request_delete(request, pk):
+    req = get_object_or_404(Request, pk=pk)
+    if req.created_by != request.user or req.status != Request.STATUS_DRAFT:
+        return HttpResponseForbidden('Możesz usunąć tylko własne wnioski robocze')
+
+    if request.method == 'POST':
+        req.delete()
+        return redirect('osp:request_list')
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': req,
+        'title': 'Usuń wniosek',
+        'cancel_url': reverse('osp:request_detail', args=[req.pk]),
+    })
+
+
+@login_required
+def osp_report_delete(request, pk):
+    report = get_object_or_404(OSPReport.objects.select_related('unit'), pk=pk)
+    if not can_manage_unit(request.user, report.unit) or report.status != OSPReport.STATUS_DRAFT:
+        return HttpResponseForbidden('Możesz usunąć tylko własny raport roboczy')
+
+    if request.method == 'POST':
+        report.delete()
+        return redirect('osp:osp_report_list')
+
+    return render(request, 'osp/confirm_delete.html', {
+        'object': report,
+        'title': 'Usuń raport OSP',
+        'cancel_url': reverse('osp:osp_report_detail', args=[report.pk]),
+    })
 
 
 def landing(request):

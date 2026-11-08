@@ -39,6 +39,17 @@
         </div>
       </div>
 
+      <form method="get" class="wp-search">
+        <input type="search" name="q" value="{{ q }}" placeholder="Szukaj: tytuł, miejsce, typ">
+        <select name="status">
+          <option value="">Wszystkie statusy</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}"{% if status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button class="wp-btn" type="submit">Filtruj</button>
+      </form>
+
       <div class="wp-table-wrap" role="region" aria-label="Lista działań ratowniczych">
         <table class="wp-table">
           <thead>
@@ -71,6 +82,7 @@
           </tbody>
         </table>
       </div>
+      {% include 'osp/_pagination.html' %}
     </section>
   </div>
 </div>

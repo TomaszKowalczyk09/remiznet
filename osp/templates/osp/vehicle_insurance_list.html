@@ -3,63 +3,79 @@
 {% block title %}Ubezpieczenie pojazdów{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1>Ubezpieczenie pojazdów</h1>
-    <p class="text-muted">Jednostka: <strong>{{ unit.name }}</strong></p>
-    
-    <a href="{% url 'osp:vehicle_insurance_add' unit_pk=unit.pk %}" class="btn btn-primary mb-3">
-        + Dodaj pojazd
-    </a>
-
-    {% if insurance_list %}
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Pojazd</th>
-                        <th>Numer rej.</th>
-                        <th>Ubezpieczalnia</th>
-                        <th>Ważne do</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for insurance in insurance_list %}
-                        <tr>
-                            <td><strong>{{ insurance.equipment.name }}</strong></td>
-                            <td>{{ insurance.registration_number }}</td>
-                            <td>{{ insurance.insurance_provider }}</td>
-                            <td>
-                                {% now "Y-m-d" as today %}
-                                <strong {% if insurance.policy_end_date < today %}class="text-danger"{% endif %}>
-                                    {{ insurance.policy_end_date }}
-                                </strong>
-                            </td>
-                            <td>
-                                {% now "Y-m-d" as today %}
-                                {% if insurance.policy_end_date < today %}
-                                    <span class="badge bg-danger">Wygasłe</span>
-                                {% elif insurance.policy_end_date <= today|add:60d %}
-                                    <span class="badge bg-warning">Wkrótce</span>
-                                {% else %}
-                                    <span class="badge bg-success">Aktywne</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="alert alert-info">
-            Brak wpisów ubezpieczenia pojazdów.
-        </div>
-    {% endif %}
-
-    <div class="mt-4">
-        <a href="{% url 'osp:osp_report_list_unit' unit_pk=unit.pk %}" class="btn btn-secondary">
-            ← Powrót
-        </a>
+<div class="wp-admin">
+  <header class="wp-topbar">
+    <div class="wp-topbar-left">
+      <div class="wp-brand">Remiznet</div>
+      <span class="wp-sep">/</span>
+      <span class="wp-area">Ubezpieczenie pojazdów</span>
     </div>
+    <div class="wp-topbar-right">
+      <span class="wp-user">{{ request.user.username }}</span>
+      <a class="wp-topbar-link" href="{% url 'osp:logout' %}">Wyloguj</a>
+    </div>
+  </header>
+
+  <div class="wp-layout">
+    {% include 'osp/_sidebar.html' with sidebar_active='equipment' %}
+
+    <section class="wp-content">
+      <div class="wp-page-head">
+        <div>
+          <h2 class="wp-title">Ubezpieczenie pojazdów</h2>
+          <p class="wp-subtitle">Jednostka: {{ unit.name }}</p>
+        </div>
+        <div class="wp-actions">
+          <a class="wp-btn wp-btn--primary" href="{% url 'osp:vehicle_insurance_add' unit_pk=unit.pk %}">+ Dodaj pojazd</a>
+        </div>
+      </div>
+
+      <div class="wp-table-wrap" role="region" aria-label="Ubezpieczenia pojazdów">
+        <table class="wp-table">
+          <thead>
+            <tr>
+              <th>Pojazd</th>
+              <th>Numer rej.</th>
+              <th>Ubezpieczalnia</th>
+              <th>Ważne do</th>
+              <th>Status</th>
+              <th>Akcje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for insurance in insurance_list %}
+              <tr>
+                <td class="wp-td-strong">{{ insurance.equipment.name }}</td>
+                <td>{{ insurance.registration_number }}</td>
+                <td>{{ insurance.insurance_provider }}</td>
+                <td>{{ insurance.policy_end_date }}</td>
+                <td>
+                  {% if insurance.policy_end_date < today %}
+                    Wygasłe
+                  {% elif insurance.policy_end_date <= soon %}
+                    Wkrótce
+                  {% else %}
+                    Aktywne
+                  {% endif %}
+                </td>
+                <td class="wp-td-right">
+                  {% if is_president or is_official %}
+                    <a class="wp-btn" href="{% url 'osp:vehicle_insurance_edit' insurance.pk %}">Edytuj</a>
+                    <a class="wp-btn wp-btn--danger" href="{% url 'osp:vehicle_insurance_delete' insurance.pk %}">Usuń</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6">Brak wpisów ubezpieczenia pojazdów.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="wp-page-head">
+        <a class="wp-btn" href="{% url 'osp:osp_report_list_unit' unit_pk=unit.pk %}">← Powrót</a>
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock %}
